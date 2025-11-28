@@ -1,6 +1,6 @@
 import { RowDataPacket } from 'mysql2/promise';
 import { BaseRepository } from './BaseRepository';
-import { Course, CreateCourseRequest, UpdateCourseRequest, CourseWithFaculty } from '../models/Course';
+import { Course, CreateCourseRequest, UpdateCourseRequest, CourseWithTeacher } from '../models/Course';
 import { DatabaseUtils } from '../utils/database';
 
 export class CourseRepository extends BaseRepository<Course, CreateCourseRequest, UpdateCourseRequest> {
@@ -10,27 +10,28 @@ export class CourseRepository extends BaseRepository<Course, CreateCourseRequest
 
   protected mapRowToEntity(row: RowDataPacket): Course {
     return {
-      id: row.id,
-      course_code: row.course_code,
+      course_id: row.course_id,
       course_name: row.course_name,
-      credits: row.credits,
-      description: row.description,
-      faculty_id: row.faculty_id
+      course_group: row.course_group,
+      creation_date: row.creation_date,
+      course_passing_grade: row.course_passing_grade,
+      course_status: row.course_status,
+      teacher_id: row.teacher_id
     };
   }
 
   async create(data: CreateCourseRequest): Promise<Course> {
     const query = `
-      INSERT INTO ${this.tableName} (course_code, course_name, credits, description, faculty_id) 
+      INSERT INTO ${this.tableName} (course_name, course_group, course_passing_grade, course_status, teacher_id) 
       VALUES (?, ?, ?, ?, ?)
     `;
     
     await DatabaseUtils.executeQuery(query, [
-      data.course_code,
       data.course_name,
-      data.credits,
-      data.description,
-      data.faculty_id
+      data.course_group || null,
+      data.course_passing_grade || 50,
+      data.course_status || 'active',
+      data.teacher_id
     ]);
     
     const insertId = await DatabaseUtils.getLastInsertId();
@@ -47,29 +48,29 @@ export class CourseRepository extends BaseRepository<Course, CreateCourseRequest
     const updates: string[] = [];
     const values: any[] = [];
     
-    if (data.course_code !== undefined) {
-      updates.push('course_code = ?');
-      values.push(data.course_code);
-    }
-    
     if (data.course_name !== undefined) {
       updates.push('course_name = ?');
       values.push(data.course_name);
     }
     
-    if (data.credits !== undefined) {
-      updates.push('credits = ?');
-      values.push(data.credits);
+    if (data.course_group !== undefined) {
+      updates.push('course_group = ?');
+      values.push(data.course_group);
     }
     
-    if (data.description !== undefined) {
-      updates.push('description = ?');
-      values.push(data.description);
+    if (data.course_passing_grade !== undefined) {
+      updates.push('course_passing_grade = ?');
+      values.push(data.course_passing_grade);
     }
     
-    if (data.faculty_id !== undefined) {
-      updates.push('faculty_id = ?');
-      values.push(data.faculty_id);
+    if (data.course_status !== undefined) {
+      updates.push('course_status = ?');
+      values.push(data.course_status);
+    }
+    
+    if (data.teacher_id !== undefined) {
+      updates.push('teacher_id = ?');
+      values.push(data.teacher_id);
     }
     
     if (updates.length === 0) {
@@ -77,31 +78,23 @@ export class CourseRepository extends BaseRepository<Course, CreateCourseRequest
     }
     
     values.push(id);
-    const query = `UPDATE ${this.tableName} SET ${updates.join(', ')} WHERE id = ?`;
+    const query = `UPDATE ${this.tableName} SET ${updates.join(', ')} WHERE course_id = ?`;
     
     await DatabaseUtils.executeQuery(query, values);
     return this.findById(id);
   }
 
   // Additional course-specific methods
-  async findByCourseCode(course_code: string): Promise<Course | null> {
-    const query = `SELECT * FROM ${this.tableName} WHERE course_code = ?`;
-    const rows = await DatabaseUtils.executeQuery<RowDataPacket>(query, [course_code]);
-    
-    if (rows.length === 0) return null;
-    return this.mapRowToEntity(rows[0]);
-  }
-
-  async findByFaculty(faculty_id: number): Promise<Course[]> {
-    const query = `SELECT * FROM ${this.tableName} WHERE faculty_id = ?`;
-    const rows = await DatabaseUtils.executeQuery<RowDataPacket>(query, [faculty_id]);
+  async findByTeacher(teacher_id: number): Promise<Course[]> {
+    const query = `SELECT * FROM ${this.tableName} WHERE teacher_id = ?`;
+    const rows = await DatabaseUtils.executeQuery<RowDataPacket>(query, [teacher_id]);
     
     return rows.map((row: RowDataPacket) => this.mapRowToEntity(row));
   }
 
-  async findByCredits(credits: number): Promise<Course[]> {
-    const query = `SELECT * FROM ${this.tableName} WHERE credits = ?`;
-    const rows = await DatabaseUtils.executeQuery<RowDataPacket>(query, [credits]);
+  async findByStatus(status: 'active' | 'inactive' | 'archived'): Promise<Course[]> {
+    const query = `SELECT * FROM ${this.tableName} WHERE course_status = ?`;
+    const rows = await DatabaseUtils.executeQuery<RowDataPacket>(query, [status]);
     
     return rows.map((row: RowDataPacket) => this.mapRowToEntity(row));
   }
@@ -113,14 +106,14 @@ export class CourseRepository extends BaseRepository<Course, CreateCourseRequest
     return rows.map((row: RowDataPacket) => this.mapRowToEntity(row));
   }
 
-  async findWithFacultyInfo(id: number): Promise<CourseWithFaculty | null> {
+  async findWithTeacherInfo(id: number): Promise<CourseWithTeacher | null> {
     const query = `
       SELECT 
-        c.id, c.course_code, c.course_name, c.credits, c.description, c.faculty_id,
-        f.id as faculty_id, f.faculty_name, f.description as faculty_description
+        c.*,
+        t.user_id, t.teacher_id, t.certificate, t.faculty_id
       FROM ${this.tableName} c
-      JOIN faculty f ON c.faculty_id = f.id
-      WHERE c.id = ?
+      JOIN teacher t ON c.teacher_id = t.user_id
+      WHERE c.course_id = ?
     `;
     
     const rows = await DatabaseUtils.executeQuery<RowDataPacket>(query, [id]);
@@ -129,51 +122,19 @@ export class CourseRepository extends BaseRepository<Course, CreateCourseRequest
     
     const row = rows[0];
     return {
-      id: row.id,
-      course_code: row.course_code,
+      course_id: row.course_id,
       course_name: row.course_name,
-      credits: row.credits,
-      description: row.description,
-      faculty_id: row.faculty_id,
-      faculty: {
-        id: row.faculty_id,
-        faculty_name: row.faculty_name,
-        description: row.faculty_description
+      course_group: row.course_group,
+      creation_date: row.creation_date,
+      course_passing_grade: row.course_passing_grade,
+      course_status: row.course_status,
+      teacher_id: row.teacher_id,
+      teacher: {
+        user_id: row.user_id,
+        teacher_id: row.teacher_id,
+        certificate: row.certificate,
+        faculty_id: row.faculty_id
       }
     };
-  }
-
-  async findAllWithFacultyInfo(limit: number = 50, offset: number = 0): Promise<CourseWithFaculty[]> {
-    const query = `
-      SELECT 
-        c.id, c.course_code, c.course_name, c.credits, c.description, c.faculty_id,
-        f.id as faculty_id, f.faculty_name, f.description as faculty_description
-      FROM ${this.tableName} c
-      JOIN faculty f ON c.faculty_id = f.id
-      LIMIT ? OFFSET ?
-    `;
-    
-    const rows = await DatabaseUtils.executeQuery<RowDataPacket>(query, [limit, offset]);
-    
-    return rows.map((row: RowDataPacket) => ({
-      id: row.id,
-      course_code: row.course_code,
-      course_name: row.course_name,
-      credits: row.credits,
-      description: row.description,
-      faculty_id: row.faculty_id,
-      faculty: {
-        id: row.faculty_id,
-        faculty_name: row.faculty_name,
-        description: row.faculty_description
-      }
-    }));
-  }
-
-  async getTotalCreditsByFaculty(faculty_id: number): Promise<number> {
-    const query = `SELECT SUM(credits) as total_credits FROM ${this.tableName} WHERE faculty_id = ?`;
-    const rows = await DatabaseUtils.executeQuery<RowDataPacket>(query, [faculty_id]);
-    
-    return rows[0].total_credits || 0;
   }
 }

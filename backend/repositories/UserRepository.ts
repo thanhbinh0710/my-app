@@ -9,9 +9,25 @@ export class UserRepository extends BaseRepository<User, CreateUserRequest, Upda
     super('user');
   }
 
+  // Override to use user_id instead of id
+  async findById(id: number): Promise<User | null> {
+    const query = `SELECT * FROM ${this.tableName} WHERE user_id = ?`;
+    const rows = await DatabaseUtils.executeQuery<RowDataPacket>(query, [id]);
+    
+    if (rows.length === 0) return null;
+    return this.mapRowToEntity(rows[0]);
+  }
+
+  async delete(id: number): Promise<boolean> {
+    const query = `DELETE FROM ${this.tableName} WHERE user_id = ?`;
+    const result = await DatabaseUtils.executeQuery<ResultSetHeader>(query, [id]);
+    
+    return (result as any).affectedRows > 0;
+  }
+
   protected mapRowToEntity(row: RowDataPacket): User {
     return {
-      id: row.id,
+      user_id: row.user_id,
       email: row.email,
       role: row.role as 'student' | 'teacher' | 'admin',
       username: row.username,
@@ -71,7 +87,7 @@ export class UserRepository extends BaseRepository<User, CreateUserRequest, Upda
     }
     
     values.push(id);
-    const query = `UPDATE ${this.tableName} SET ${updates.join(', ')} WHERE id = ?`;
+    const query = `UPDATE ${this.tableName} SET ${updates.join(', ')} WHERE user_id = ?`;
     
     await DatabaseUtils.executeQuery(query, values);
     return this.findById(id);
@@ -104,7 +120,7 @@ export class UserRepository extends BaseRepository<User, CreateUserRequest, Upda
 
   async updatePassword(id: number, newPassword: string): Promise<boolean> {
     const hashedPassword = await bcrypt.hash(newPassword, 10);
-    const query = `UPDATE ${this.tableName} SET password = ? WHERE id = ?`;
+    const query = `UPDATE ${this.tableName} SET password = ? WHERE user_id = ?`;
     
     const result = await DatabaseUtils.executeQuery<ResultSetHeader>(query, [hashedPassword, id]);
     return (result as any).affectedRows > 0;

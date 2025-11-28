@@ -1,6 +1,6 @@
 // User related interfaces - matches exact schema design
 export interface User {
-  id: number;
+  user_id: number;
   email: string;
   role: 'student' | 'teacher' | 'admin';
   username: string;

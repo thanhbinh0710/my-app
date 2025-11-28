@@ -5,7 +5,7 @@ import { createConnection } from './utils/database';
 import routes from './routes';
 
 // Load environment variables
-dotenv.config({ path: '.env.local' });
+dotenv.config();
 
 const app = express();
 
@@ -83,14 +83,6 @@ if (require.main === module) {
         second: '2-digit',
         hour12: false
       });
-      
-      console.log(`🚀 Backend server running on port ${PORT}`);
-      console.log(`🕐 Vietnam time: ${vietnamTime} (UTC+7)`);
-      console.log(`📍 Health check: http://localhost:${PORT}/health`);
-      console.log(`📚 API Routes:`);
-      console.log(`   Users: http://localhost:${PORT}/api/users`);
-      console.log(`   Auth: http://localhost:${PORT}/api/auth`);
-      console.log(`   Students: http://localhost:${PORT}/api/students`);
     });
   });
 }
