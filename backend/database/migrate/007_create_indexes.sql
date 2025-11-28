@@ -1,0 +1,29 @@
+-- ============================================
+-- Indexes for Performance
+-- ============================================
+
+CREATE INDEX IF NOT EXISTS idx_user_username ON USER(USERNAME);
+CREATE INDEX IF NOT EXISTS idx_user_email ON USER(EMAIL);
+CREATE INDEX IF NOT EXISTS idx_user_role ON USER(ROLE);
+
+CREATE INDEX IF NOT EXISTS idx_student_faculty ON STUDENT(FACULTY_ID);
+CREATE INDEX IF NOT EXISTS idx_student_roadmap ON STUDENT(ROADMAP_ID);
+
+CREATE INDEX IF NOT EXISTS idx_teacher_faculty ON TEACHER(FACULTY_ID);
+
+CREATE INDEX IF NOT EXISTS idx_course_teacher ON COURSE(TEACHER_ID);
+CREATE INDEX IF NOT EXISTS idx_course_status ON COURSE(COURSE_STATUS);
+
+CREATE INDEX IF NOT EXISTS idx_section_course ON SECTION(COURSE_ID);
+CREATE INDEX IF NOT EXISTS idx_section_teacher ON SECTION(TEACHER_ID);
+
+CREATE INDEX IF NOT EXISTS idx_lecture_section ON LECTURE(SECTION_ID);
+CREATE INDEX IF NOT EXISTS idx_quiz_section ON QUIZ(SECTION_ID);
+CREATE INDEX IF NOT EXISTS idx_question_quiz ON QUESTION(QUIZ_ID);
+CREATE INDEX IF NOT EXISTS idx_discussion_section ON DISCUSSION(SECTION_ID);
+
+CREATE INDEX IF NOT EXISTS idx_enroll_student ON ENROLL(STUDENT_ID);
+CREATE INDEX IF NOT EXISTS idx_enroll_course ON ENROLL(COURSE_ID);
+
+CREATE INDEX IF NOT EXISTS idx_do_student ON DO(STUDENT_ID);
+CREATE INDEX IF NOT EXISTS idx_do_quiz ON DO(QUIZ_ID);
