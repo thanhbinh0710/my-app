@@ -1,6 +1,5 @@
 import { StudentRepository } from '../repositories/StudentRepository';
 import { UserRepository } from '../repositories/UserRepository';
-import { FacultyRepository } from '../repositories/FacultyRepository';
 import { CreateStudentRequest, UpdateStudentRequest } from '../models';
 
 export class StudentController {

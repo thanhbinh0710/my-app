@@ -1,38 +1,24 @@
-import { UserRepository } from '../repositories/UserRepository';
+import { UserService } from '../services';
 import { StudentRepository } from '../repositories/StudentRepository';
-import { CreateUserRequest, CreateStudentRequest, User, Student } from '../models';
-import bcrypt from 'bcryptjs';
+import { CreateUserRequest, CreateStudentRequest } from '../models';
 
 export class UserController {
-  private userRepository: UserRepository;
+  private userService: UserService;
   private studentRepository: StudentRepository;
 
   constructor() {
-    this.userRepository = new UserRepository();
+    this.userService = new UserService();
     this.studentRepository = new StudentRepository();
   }
 
   // Get all users with pagination
   async getUsers(limit: number = 50, offset: number = 0) {
     try {
-      const users = await this.userRepository.findAll(limit, offset);
-      const total = await this.userRepository.count();
-      
-      // Remove passwords from response
-      const safeUsers = users.map(user => {
-        const { password, ...safeUser } = user;
-        return safeUser;
-      });
-
+      const result = await this.userService.getAllUsers(limit, offset);
       return {
         success: true,
-        data: safeUsers,
-        pagination: {
-          limit,
-          offset,
-          total,
-          totalPages: Math.ceil(total / limit)
-        }
+        data: result.users,
+        pagination: result.pagination
       };
     } catch (error) {
       return {
@@ -45,26 +31,15 @@ export class UserController {
   // Get user by ID
   async getUserById(id: number) {
     try {
-      const user = await this.userRepository.findById(id);
-      
-      if (!user) {
-        return {
-          success: false,
-          error: 'User not found'
-        };
-      }
-
-      // Remove password from response
-      const { password, ...safeUser } = user;
-      
+      const user = await this.userService.getUserById(id);
       return {
         success: true,
-        data: safeUser
+        data: user
       };
     } catch (error) {
       return {
         success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred'
+        error: error instanceof Error ? error.message : 'User not found'
       };
     }
   }
@@ -72,40 +47,10 @@ export class UserController {
   // Create new user
   async createUser(userData: CreateUserRequest) {
     try {
-      // Validate email format
-      if (!this.validateEmail(userData.email)) {
-        return {
-          success: false,
-          error: 'Invalid email format'
-        };
-      }
-
-      // Check if username already exists
-      const existingUser = await this.userRepository.findByUsername(userData.username);
-      if (existingUser) {
-        return {
-          success: false,
-          error: 'Username already exists'
-        };
-      }
-
-      // Check if email already exists
-      const existingEmail = await this.userRepository.findByEmail(userData.email);
-      if (existingEmail) {
-        return {
-          success: false,
-          error: 'Email already exists'
-        };
-      }
-
-      const user = await this.userRepository.create(userData);
-      
-      // Remove password from response
-      const { password, ...safeUser } = user;
-      
+      const user = await this.userService.createUser(userData);
       return {
         success: true,
-        data: safeUser,
+        data: user,
         message: 'User created successfully'
       };
     } catch (error) {
@@ -123,15 +68,12 @@ export class UserController {
       const userDataWithRole = { ...userData, role: 'student' as const };
       
       // Create user first
-      const userResult = await this.createUser(userDataWithRole);
-      if (!userResult.success || !userResult.data) {
-        return userResult;
-      }
+      const user = await this.userService.createUser(userDataWithRole);
 
       // Create student record
       const studentRecord = await this.studentRepository.create({
         ...studentData,
-        user_id: userResult.data.id
+        user_id: user.user_id
       });
 
       // Get student with user info
@@ -150,48 +92,13 @@ export class UserController {
     }
   }
 
-  // Login user
-  async login(username: string, password: string) {
-    try {
-      const user = await this.userRepository.verifyPassword(username, password);
-      
-      if (!user) {
-        return {
-          success: false,
-          error: 'Invalid username or password'
-        };
-      }
-
-      // Remove password from response
-      const { password: _, ...safeUser } = user;
-      
-      return {
-        success: true,
-        data: safeUser,
-        message: 'Login successful'
-      };
-    } catch (error) {
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Login failed'
-      };
-    }
-  }
-
   // Get users by role
   async getUsersByRole(role: 'student' | 'teacher' | 'admin') {
     try {
-      const users = await this.userRepository.findByRole(role);
-      
-      // Remove passwords from response
-      const safeUsers = users.map(user => {
-        const { password, ...safeUser } = user;
-        return safeUser;
-      });
-
+      const users = await this.userService.getUsersByRole(role);
       return {
         success: true,
-        data: safeUsers
+        data: users
       };
     } catch (error) {
       return {
@@ -199,11 +106,5 @@ export class UserController {
         error: error instanceof Error ? error.message : 'Failed to fetch users'
       };
     }
-  }
-
-  // Private helper methods
-  private validateEmail(email: string): boolean {
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    return emailRegex.test(email);
   }
 }

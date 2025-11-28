@@ -2,7 +2,7 @@ import mysql from 'mysql2/promise';
 import dotenv from 'dotenv';
 
 // Load environment variables
-dotenv.config({ path: '.env.local' });
+dotenv.config();
 
 // Database configuration interface
 interface DatabaseConfig {

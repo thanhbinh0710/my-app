@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { UserController } from '../controllers/UserController';
+import { AuthController } from '../controllers/AuthController';
 import { createConnection } from '../utils/database';
 
 const router = Router();
-const userController = new UserController();
+const authController = new AuthController();
 
 // Middleware to ensure database connection
 async function ensureDbConnection(req: Request, res: Response, next: Function) {
@@ -22,19 +22,26 @@ async function ensureDbConnection(req: Request, res: Response, next: Function) {
 // Apply middleware to all routes
 router.use(ensureDbConnection);
 
+// POST /api/auth/register - User registration
+// Body: { fullname: string, email: string, password: string, confirm_password: string }
+router.post('/register', async (req: Request, res: Response) => {
+  try {
+    const result = await authController.register(req.body);
+    return res.status(result.success ? 201 : 400).json(result);
+  } catch (error) {
+    console.error('Route Error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error' 
+    });
+  }
+});
+
 // POST /api/auth/login - User login
+// Body: { email: string, password: string }
 router.post('/login', async (req: Request, res: Response) => {
   try {
-    const { username, password } = req.body;
-    
-    if (!username || !password) {
-      return res.status(400).json({
-        success: false,
-        error: 'Username and password are required'
-      });
-    }
-
-    const result = await userController.login(username, password);
+    const result = await authController.login(req.body);
     return res.status(result.success ? 200 : 401).json(result);
   } catch (error) {
     console.error('Route Error:', error);
@@ -45,21 +52,23 @@ router.post('/login', async (req: Request, res: Response) => {
   }
 });
 
-// POST /api/auth/register - User registration
-router.post('/register', async (req: Request, res: Response) => {
+// POST /api/auth/verify - Verify JWT token
+// Headers: { Authorization: 'Bearer <token>' }
+router.post('/verify', async (req: Request, res: Response) => {
   try {
-    const { email, role, username, password, full_name } = req.body;
+    const authHeader = req.headers.authorization;
     
-    // Validate required fields
-    if (!email || !role || !username || !password || !full_name) {
-      return res.status(400).json({
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+      return res.status(401).json({
         success: false,
-        error: 'Missing required fields: email, role, username, password, full_name'
+        error: 'No token provided'
       });
     }
 
-    const result = await userController.createUser(req.body);
-    return res.status(result.success ? 201 : 400).json(result);
+    const token = authHeader.substring(7); // Remove 'Bearer ' prefix
+    const result = await authController.verifyToken(token);
+    
+    return res.status(result.success ? 200 : 401).json(result);
   } catch (error) {
     console.error('Route Error:', error);
     return res.status(500).json({ 
