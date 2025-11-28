@@ -2,8 +2,6 @@
 
 @custom-variant dark (&:is(.dark *));
 @import "tailwindcss";
-@import "tailwindcss/preflight";
-@import "tailwindcss/utilities";
 
 :root {
   --radius: 0.65rem;
