@@ -10,6 +10,7 @@ import {
   Settings,
   MoreVertical,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
 import Sidebar from "../components/layout/Sidebar";
 import Navbar from "../components/layout/Navbar";
 export default function LMSDashboard() {
