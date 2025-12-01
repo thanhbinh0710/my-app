@@ -1,20 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { RoadmapController } from '../controllers/RoadmapController';
-import { createConnection } from '../utils/database';
+import { ensureDbConnection } from '../middleware/database';
 
 const router = Router();
 const roadmapController = new RoadmapController();
-
-// Middleware to ensure database connection
-async function ensureDbConnection(req: Request, res: Response, next: Function) {
-  try {
-    await createConnection();
-    next();
-  } catch (error) {
-    console.error('Database connection failed:', error);
-    return res.status(500).json({ success: false, error: 'Database connection failed' });
-  }
-}
 
 router.use(ensureDbConnection);
 

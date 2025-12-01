@@ -1,20 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { FacultyController } from '../controllers/FacultyController';
-import { createConnection } from '../utils/database';
+import { ensureDbConnection } from '../middleware/database';
 
 const router = Router();
 const facultyController = new FacultyController();
-
-// Middleware to ensure database connection
-async function ensureDbConnection(req: Request, res: Response, next: Function) {
-  try {
-    await createConnection();
-    next();
-  } catch (error) {
-    console.error('Database connection failed:', error);
-    return res.status(500).json({ success: false, error: 'Database connection failed' });
-  }
-}
 
 router.use(ensureDbConnection);
 
