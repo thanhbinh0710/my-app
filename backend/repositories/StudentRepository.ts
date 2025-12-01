@@ -142,9 +142,9 @@ export class StudentRepository extends BaseRepository<Student, CreateStudentRequ
       SELECT 
         s.user_id, s.student_id, s.admission_date, s.total_credit_earn, 
         s.total_course_register, s.total_course_complete, s.faculty_id, s.roadmap_id,
-        u.id, u.email, u.username, u.full_name, u.role
+        u.user_id as u_user_id, u.email, u.username, u.full_name, u.role
       FROM ${this.tableName} s
-      JOIN user u ON s.user_id = u.id
+      JOIN user u ON s.user_id = u.user_id
       WHERE s.user_id = ?
     `;
     
@@ -163,7 +163,7 @@ export class StudentRepository extends BaseRepository<Student, CreateStudentRequ
       faculty_id: row.faculty_id,
       roadmap_id: row.roadmap_id,
       user: {
-        id: row.id,
+        id: row.u_user_id,
         email: row.email,
         username: row.username,
         full_name: row.full_name,
@@ -177,9 +177,9 @@ export class StudentRepository extends BaseRepository<Student, CreateStudentRequ
       SELECT 
         s.user_id, s.student_id, s.admission_date, s.total_credit_earn, 
         s.total_course_register, s.total_course_complete, s.faculty_id, s.roadmap_id,
-        u.id, u.email, u.username, u.full_name, u.role
+        u.user_id as u_user_id, u.email, u.username, u.full_name, u.role
       FROM ${this.tableName} s
-      JOIN user u ON s.user_id = u.id
+      JOIN user u ON s.user_id = u.user_id
       LIMIT ? OFFSET ?
     `;
     
@@ -195,7 +195,7 @@ export class StudentRepository extends BaseRepository<Student, CreateStudentRequ
       faculty_id: row.faculty_id,
       roadmap_id: row.roadmap_id,
       user: {
-        id: row.id,
+        id: row.u_user_id,
         email: row.email,
         username: row.username,
         full_name: row.full_name,

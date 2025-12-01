@@ -20,6 +20,20 @@ export class CourseRepository extends BaseRepository<Course, CreateCourseRequest
     };
   }
 
+  // Override findById to accept string
+  async findById(id: string | number): Promise<Course | null> {
+    const query = `SELECT * FROM ${this.tableName} WHERE course_id = ?`;
+    const results = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [id]);
+    return results.length > 0 ? this.mapRowToEntity(results[0] as any) : null;
+  }
+
+  // Override delete to accept string
+  async delete(id: string | number): Promise<boolean> {
+    const query = `DELETE FROM ${this.tableName} WHERE course_id = ?`;
+    await DatabaseUtils.executeQuery(query, [id]);
+    return true;
+  }
+
   async create(data: CreateCourseRequest): Promise<Course> {
     const query = `
       INSERT INTO ${this.tableName} (course_name, course_group, course_passing_grade, course_status, teacher_id) 
@@ -44,7 +58,7 @@ export class CourseRepository extends BaseRepository<Course, CreateCourseRequest
     return newCourse;
   }
 
-  async update(id: number, data: UpdateCourseRequest): Promise<Course | null> {
+  async update(id: string | number, data: UpdateCourseRequest): Promise<Course | null> {
     const updates: string[] = [];
     const values: any[] = [];
     
@@ -87,26 +101,26 @@ export class CourseRepository extends BaseRepository<Course, CreateCourseRequest
   // Additional course-specific methods
   async findByTeacher(teacher_id: number): Promise<Course[]> {
     const query = `SELECT * FROM ${this.tableName} WHERE teacher_id = ?`;
-    const rows = await DatabaseUtils.executeQuery<RowDataPacket>(query, [teacher_id]);
+    const rows = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [teacher_id]);
     
-    return rows.map((row: RowDataPacket) => this.mapRowToEntity(row));
+    return rows.map((row: any) => this.mapRowToEntity(row));
   }
 
   async findByStatus(status: 'active' | 'inactive' | 'archived'): Promise<Course[]> {
     const query = `SELECT * FROM ${this.tableName} WHERE course_status = ?`;
-    const rows = await DatabaseUtils.executeQuery<RowDataPacket>(query, [status]);
+    const rows = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [status]);
     
-    return rows.map((row: RowDataPacket) => this.mapRowToEntity(row));
+    return rows.map((row: any) => this.mapRowToEntity(row));
   }
 
   async searchByName(searchTerm: string): Promise<Course[]> {
     const query = `SELECT * FROM ${this.tableName} WHERE course_name LIKE ?`;
-    const rows = await DatabaseUtils.executeQuery<RowDataPacket>(query, [`%${searchTerm}%`]);
+    const rows = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [`%${searchTerm}%`]);
     
-    return rows.map((row: RowDataPacket) => this.mapRowToEntity(row));
+    return rows.map((row: any) => this.mapRowToEntity(row));
   }
 
-  async findWithTeacherInfo(id: number): Promise<CourseWithTeacher | null> {
+  async findWithTeacherInfo(id: string | number): Promise<CourseWithTeacher | null> {
     const query = `
       SELECT 
         c.*,
@@ -116,11 +130,11 @@ export class CourseRepository extends BaseRepository<Course, CreateCourseRequest
       WHERE c.course_id = ?
     `;
     
-    const rows = await DatabaseUtils.executeQuery<RowDataPacket>(query, [id]);
+    const rows = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [id]);
     
     if (rows.length === 0) return null;
     
-    const row = rows[0];
+    const row: any = rows[0];
     return {
       course_id: row.course_id,
       course_name: row.course_name,

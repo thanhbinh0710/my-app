@@ -2,6 +2,11 @@ import express from 'express';
 import userRoutes from './userRoutes';
 import authRoutes from './authRoutes';
 import studentRoutes from './studentRoutes';
+import courseRoutes from './courseRoutes';
+import teacherRoutes from './teacherRoutes';
+import enrollmentRoutes from './enrollmentRoutes';
+import facultyRoutes from './facultyRoutes';
+import roadmapRoutes from './roadmapRoutes';
 
 const router = express.Router();
 
@@ -9,6 +14,11 @@ const router = express.Router();
 router.use('/users', userRoutes);
 router.use('/auth', authRoutes);
 router.use('/students', studentRoutes);
+router.use('/courses', courseRoutes);
+router.use('/teachers', teacherRoutes);
+router.use('/enrollments', enrollmentRoutes);
+router.use('/faculties', facultyRoutes);
+router.use('/roadmaps', roadmapRoutes);
 
 // API Info route
 router.get('/', (req, res) => {
@@ -32,7 +42,12 @@ router.get('/', (req, res) => {
     endpoints: {
       auth: '/api/auth',
       users: '/api/users', 
-      students: '/api/students'
+      students: '/api/students',
+      courses: '/api/courses',
+      teachers: '/api/teachers',
+      enrollments: '/api/enrollments',
+      faculties: '/api/faculties',
+      roadmaps: '/api/roadmaps'
     }
   });
 });

@@ -23,7 +23,7 @@ async function ensureDbConnection(req: Request, res: Response, next: Function) {
 router.use(ensureDbConnection);
 
 // POST /api/auth/register - User registration
-// Body: { fullname: string, email: string, password: string, confirm_password: string }
+// Body: { fullname: string, username: string, email: string, password: string, confirm_password: string }
 router.post('/register', async (req: Request, res: Response) => {
   try {
     const result = await authController.register(req.body);
@@ -38,7 +38,7 @@ router.post('/register', async (req: Request, res: Response) => {
 });
 
 // POST /api/auth/login - User login
-// Body: { email: string, password: string }
+// Body: { identifier: string (username or email), password: string }
 router.post('/login', async (req: Request, res: Response) => {
   try {
     const result = await authController.login(req.body);

@@ -1,6 +1,6 @@
 // Course related interfaces - matches exact schema design
 export interface Course {
-  course_id: number;
+  course_id: string;
   course_name: string;
   course_group: string | null;
   creation_date: string;
@@ -26,7 +26,7 @@ export interface UpdateCourseRequest {
 }
 
 export interface CourseWithTeacher {
-  course_id: number;
+  course_id: string;
   course_name: string;
   course_group: string | null;
   creation_date: string;

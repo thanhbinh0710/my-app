@@ -1,6 +1,6 @@
 // Enrollment related interfaces - matches exact schema design (enroll table)
 export interface Enroll {
-  course_id: number;
+  course_id: string;
   student_id: number;
   start_date: string;
   complete_date: string | null;
@@ -9,7 +9,7 @@ export interface Enroll {
 }
 
 export interface CreateEnrollRequest {
-  course_id: number;
+  course_id: string;
   student_id: number;
   start_date?: string;
   grade?: number;
@@ -24,13 +24,13 @@ export interface UpdateEnrollRequest {
 
 // Contain table (course-roadmap relationship)
 export interface Contain {
-  course_id: number;
+  course_id: string;
   roadmap_id: number;
   order: number;
 }
 
 export interface CreateContainRequest {
-  course_id: number;
+  course_id: string;
   roadmap_id: number;
   order: number;
 }
