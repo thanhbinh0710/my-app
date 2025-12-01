@@ -4,13 +4,14 @@ import { AuthUtils, ValidationUtils } from '../utils/helpers';
 
 interface RegisterRequest {
   fullname: string;
+  username: string;
   email: string;
   password: string;
   confirm_password: string;
 }
 
 interface LoginRequest {
-  email: string;
+  identifier: string; // username or email
   password: string;
 }
 
@@ -25,11 +26,11 @@ export class AuthService {
    * Register a new user
    */
   async register(data: RegisterRequest) {
-    const { fullname, email, password, confirm_password } = data;
+    const { fullname, username, email, password, confirm_password } = data;
 
     // Validate required fields
-    if (!fullname || !email || !password || !confirm_password) {
-      throw new Error('All fields are required: fullname, email, password, confirm_password');
+    if (!fullname || !username || !email || !password || !confirm_password) {
+      throw new Error('All fields are required: fullname, username, email, password, confirm_password');
     }
 
     // Validate email format
@@ -41,6 +42,21 @@ export class AuthService {
     const existingEmail = await this.userRepository.findByEmail(email);
     if (existingEmail) {
       throw new Error('Email already exists');
+    }
+
+    // Check if username already exists
+    const existingUsername = await this.userRepository.findByUsername(username);
+    if (existingUsername) {
+      throw new Error('Username already exists');
+    }
+
+    // Validate username (at least 3 characters, alphanumeric and underscore only)
+    if (username.length < 3) {
+      throw new Error('Username must be at least 3 characters long');
+    }
+    
+    if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+      throw new Error('Username can only contain letters, numbers, and underscores');
     }
 
     // Validate password length (at least 8 characters)
@@ -57,17 +73,6 @@ export class AuthService {
     const fullNameValidation = ValidationUtils.validateFullName(fullname);
     if (!fullNameValidation.isValid) {
       throw new Error(fullNameValidation.errors[0]);
-    }
-
-    // Generate username from email (part before @)
-    let username = email.split('@')[0];
-
-    // Check if username already exists
-    const existingUser = await this.userRepository.findByUsername(username);
-    if (existingUser) {
-      // If username exists, add random suffix
-      const randomSuffix = Math.floor(Math.random() * 10000);
-      username = `${username}${randomSuffix}`;
     }
 
     // Create user
@@ -99,31 +104,34 @@ export class AuthService {
   }
 
   /**
-   * Login user
+   * Login user with username or email
    */
   async login(data: LoginRequest) {
-    const { email, password } = data;
+    const { identifier, password } = data;
 
     // Validate required fields
-    if (!email || !password) {
-      throw new Error('Email and password are required');
+    if (!identifier || !password) {
+      throw new Error('Username/Email and password are required');
     }
 
-    // Validate email format
-    if (!ValidationUtils.validateEmail(email)) {
-      throw new Error('Invalid email format');
+    // Try to find user by email or username
+    let user;
+    if (ValidationUtils.validateEmail(identifier)) {
+      // If identifier is email format, search by email
+      user = await this.userRepository.findByEmail(identifier);
+    } else {
+      // Otherwise, search by username
+      user = await this.userRepository.findByUsername(identifier);
     }
 
-    // Find user by email
-    const user = await this.userRepository.findByEmail(email);
     if (!user) {
-      throw new Error('Invalid email or password');
+      throw new Error('Invalid username/email or password');
     }
 
     // Verify password
     const isPasswordValid = await AuthUtils.comparePassword(password, user.password);
     if (!isPasswordValid) {
-      throw new Error('Invalid email or password');
+      throw new Error('Invalid username/email or password');
     }
 
     // Generate JWT token

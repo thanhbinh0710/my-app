@@ -2,13 +2,14 @@ import { AuthService } from '../services';
 
 interface RegisterRequest {
   fullname: string;
+  username: string;
   email: string;
   password: string;
   confirm_password: string;
 }
 
 interface LoginRequest {
-  email: string;
+  identifier: string; // username or email
   password: string;
 }
 
