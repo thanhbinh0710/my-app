@@ -45,17 +45,26 @@ export class SeederRunner {
   private static async executeSeederFile(filePath: string): Promise<void> {
     const sqlContent = fs.readFileSync(filePath, 'utf8');
     
-    // Better SQL parsing - split by semicolon but preserve multi-line statements
-    const statements = sqlContent
+    // Remove all SQL comments first
+    let cleanedSQL = sqlContent
+      // Remove single-line comments
+      .split('\n')
+      .map(line => {
+        const commentIndex = line.indexOf('--');
+        if (commentIndex >= 0) {
+          return line.substring(0, commentIndex);
+        }
+        return line;
+      })
+      .join('\n')
+      // Remove multi-line comments
+      .replace(/\/\*[\s\S]*?\*\//g, '');
+    
+    // Split by semicolon and filter
+    const statements = cleanedSQL
       .split(';')
       .map(stmt => stmt.trim())
-      .filter(stmt => {
-        // Filter out empty statements and comments
-        return stmt.length > 0 && 
-               !stmt.startsWith('--') && 
-               !stmt.startsWith('/*') &&
-               stmt !== '';
-      });
+      .filter(stmt => stmt.length > 0);
 
     // Execute each statement
     for (const statement of statements) {
