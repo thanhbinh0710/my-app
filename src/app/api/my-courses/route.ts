@@ -11,7 +11,7 @@ export async function GET() {
     let userData;
     if (!token) {
       console.log("No token provided, will try to find any student");
-      
+
       // Try to get any student from the database
       try {
         const anyStudentResponse = await fetch(
@@ -20,15 +20,19 @@ export async function GET() {
             method: "GET",
           }
         );
-        
+
         if (anyStudentResponse.ok) {
           const anyStudentData = await anyStudentResponse.json();
           console.log("All students response:", anyStudentData);
-          
-          if (anyStudentData.success && anyStudentData.data && anyStudentData.data.length > 0) {
+
+          if (
+            anyStudentData.success &&
+            anyStudentData.data &&
+            anyStudentData.data.length > 0
+          ) {
             const firstStudent = anyStudentData.data[0];
             console.log("Using first student:", firstStudent);
-            
+
             userData = {
               success: true,
               data: {
@@ -106,15 +110,15 @@ export async function GET() {
     ) {
       console.log("No student found for user_id:", userData.data.user_id);
       console.log("Student response:", studentData);
-      
+
       // Try to use student_id directly if no mapping found
       const directStudent = {
         student_id: 1, // Use student_id = 1 directly
-        full_name: "Test Student"
+        full_name: "Test Student",
       };
-      
+
       console.log("Using direct student:", directStudent);
-      
+
       // Try to fetch courses with direct student_id
       try {
         const coursesResponse = await fetch(
@@ -133,7 +137,7 @@ export async function GET() {
       } catch (directError) {
         console.log("Direct fetch failed:", directError);
       }
-      
+
       return NextResponse.json(
         { error: "Student profile not found" },
         { status: 404 }
@@ -171,7 +175,7 @@ export async function GET() {
     } catch (fetchError) {
       console.error("Fetch error:", fetchError);
       console.log("Falling back to mock enrolled courses data");
-      
+
       // Fallback to mock data when backend is not available
       return NextResponse.json({
         success: true,
@@ -191,10 +195,10 @@ export async function GET() {
               start_date: "2024-09-01",
               totalLessons: 60,
               completedLessons: 39,
-              nextLesson: "Advanced Topics"
-            }
-          ]
-        }
+              nextLesson: "Advanced Topics",
+            },
+          ],
+        },
       });
     }
   } catch (error) {

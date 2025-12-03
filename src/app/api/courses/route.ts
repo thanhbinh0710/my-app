@@ -26,7 +26,7 @@ export async function GET() {
   } catch (error) {
     console.error("Courses API proxy error:", error);
     console.log("Falling back to mock data");
-    
+
     // Fallback to mock data when backend is not available - courses that student hasn't enrolled in
     return NextResponse.json({
       success: true,
@@ -37,38 +37,38 @@ export async function GET() {
             course_name: "Cấu trúc dữ liệu và Giải thuật",
             course_credit: 4,
             course_status: "active",
-            teacher_name: "Teacher Name"
+            teacher_name: "Teacher Name",
           },
           {
             course_id: "MI1013",
             course_name: "Toán rời rạc",
             course_credit: 4,
             course_status: "active",
-            teacher_name: "Teacher Name"
+            teacher_name: "Teacher Name",
           },
           {
             course_id: "CO4017",
             course_name: "Phát triển Ứng dụng Web",
             course_credit: 4,
             course_status: "active",
-            teacher_name: "Teacher Name"
+            teacher_name: "Teacher Name",
           },
           {
             course_id: "CO3014",
             course_name: "Hệ điều hành",
             course_credit: 4,
             course_status: "active",
-            teacher_name: "Teacher Name"
+            teacher_name: "Teacher Name",
           },
           {
             course_id: "CO3015",
             course_name: "Mạng máy tính",
             course_credit: 4,
             course_status: "active",
-            teacher_name: "Teacher Name"
-          }
-        ]
-      }
+            teacher_name: "Teacher Name",
+          },
+        ],
+      },
     });
   }
 }
