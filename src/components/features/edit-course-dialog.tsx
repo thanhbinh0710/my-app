@@ -38,6 +38,7 @@ interface Course {
   course_credit: number;
   teacher_id: number;
   teacher_name?: string;
+  course_status?: string;
 }
 
 interface EditCourseDialogProps {
@@ -52,6 +53,7 @@ interface EditCourseDialogProps {
       course_passing_grade?: number;
       course_credit: number;
       teacher_id: number;
+      course_status?: string;
     }
   ) => Promise<void>;
 }
@@ -68,12 +70,14 @@ export function EditCourseDialog({
     course_passing_grade: number | string;
     course_credit: number | string;
     teacher_id: string;
+    course_status: string;
   }>({
     course_name: "",
     course_group: "",
     course_passing_grade: 5,
     course_credit: 3,
     teacher_id: "",
+    course_status: "active",
   });
   const [teachers, setTeachers] = React.useState<Teacher[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -95,6 +99,7 @@ export function EditCourseDialog({
         course_passing_grade: course.course_passing_grade || 5,
         course_credit: course.course_credit || 3,
         teacher_id: course.teacher_id?.toString() || "",
+        course_status: course.course_status || "active",
       });
     } else {
       setFormData({
@@ -103,6 +108,7 @@ export function EditCourseDialog({
         course_passing_grade: 5,
         course_credit: 3,
         teacher_id: "",
+        course_status: "active",
       });
     }
   }, [course]);
@@ -149,6 +155,7 @@ export function EditCourseDialog({
             ? parseFloat(formData.course_credit) || 3
             : formData.course_credit,
         teacher_id: parseInt(formData.teacher_id),
+        course_status: formData.course_status,
         ...(formData.course_group.trim() && {
           course_group: formData.course_group.trim(),
         }),
@@ -264,7 +271,7 @@ export function EditCourseDialog({
 
             <div className="grid gap-2">
               <Label htmlFor="edit_teacher_id">
-                Giảng viên <span className="text-red-500">*</span>
+                Teacher <span className="text-red-500">*</span>
               </Label>
               <Select
                 value={formData.teacher_id}
@@ -293,6 +300,25 @@ export function EditCourseDialog({
                       </SelectItem>
                     );
                   })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="edit_course_status">Course Status</Label>
+              <Select
+                value={formData.course_status}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, course_status: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
                 </SelectContent>
               </Select>
             </div>

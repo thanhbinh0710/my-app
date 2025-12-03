@@ -40,6 +40,7 @@ interface AddCourseDialogProps {
     course_passing_grade?: number;
     course_credit: number;
     teacher_id: number;
+    course_status?: string;
   }) => Promise<void>;
 }
 
@@ -55,6 +56,7 @@ export function AddCourseDialog({
     course_passing_grade: number | string;
     course_credit: number | string;
     teacher_id: string;
+    course_status: string;
   }>({
     course_id: "",
     course_name: "",
@@ -62,6 +64,7 @@ export function AddCourseDialog({
     course_passing_grade: 5,
     course_credit: 3,
     teacher_id: "",
+    course_status: "active",
   });
   const [teachers, setTeachers] = React.useState<Teacher[]>([]);
   const [isLoading, setIsLoading] = React.useState(false);
@@ -97,15 +100,15 @@ export function AddCourseDialog({
     e.preventDefault();
 
     if (!formData.course_id.trim()) {
-      alert("Mã khóa học là bắt buộc");
+      alert("Course ID is required");
       return;
     }
     if (!formData.course_name.trim()) {
-      alert("Tên khóa học là bắt buộc");
+      alert("Course name is required");
       return;
     }
     if (!formData.teacher_id) {
-      alert("Giảng viên là bắt buộc");
+      alert("Teacher is required");
       return;
     }
 
@@ -119,6 +122,7 @@ export function AddCourseDialog({
             ? parseFloat(formData.course_credit) || 3
             : formData.course_credit,
         teacher_id: parseInt(formData.teacher_id),
+        course_status: formData.course_status,
         ...(formData.course_group.trim() && {
           course_group: formData.course_group.trim(),
         }),
@@ -140,6 +144,7 @@ export function AddCourseDialog({
         course_passing_grade: 5,
         course_credit: 3,
         teacher_id: "",
+        course_status: "active",
       });
       onOpenChange(false);
     } catch (error) {
@@ -226,7 +231,7 @@ export function AddCourseDialog({
             </div>
 
             <div className="grid gap-2">
-              <Label htmlFor="course_group">Nhóm khóa học</Label>
+              <Label htmlFor="course_group">Course Group</Label>
               <Input
                 id="course_group"
                 value={formData.course_group}
@@ -280,6 +285,25 @@ export function AddCourseDialog({
                       </SelectItem>
                     );
                   })}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div className="grid gap-2">
+              <Label htmlFor="course_status">Course Status</Label>
+              <Select
+                value={formData.course_status}
+                onValueChange={(value) =>
+                  setFormData((prev) => ({ ...prev, course_status: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="inactive">Inactive</SelectItem>
+                  <SelectItem value="archived">Archived</SelectItem>
                 </SelectContent>
               </Select>
             </div>
