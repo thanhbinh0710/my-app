@@ -1,11 +1,20 @@
-import { RowDataPacket } from 'mysql2/promise';
-import { BaseRepository } from './BaseRepository';
-import { Course, CreateCourseRequest, UpdateCourseRequest, CourseWithTeacher } from '../models/Course';
-import { DatabaseUtils } from '../utils/database';
+import { RowDataPacket } from "mysql2/promise";
+import { BaseRepository } from "./BaseRepository";
+import {
+  Course,
+  CreateCourseRequest,
+  UpdateCourseRequest,
+  CourseWithTeacher,
+} from "../models/Course";
+import { DatabaseUtils } from "../utils/database";
 
-export class CourseRepository extends BaseRepository<Course, CreateCourseRequest, UpdateCourseRequest> {
+export class CourseRepository extends BaseRepository<
+  Course,
+  CreateCourseRequest,
+  UpdateCourseRequest
+> {
   constructor() {
-    super('course');
+    super("course");
   }
 
   protected mapRowToEntity(row: RowDataPacket): Course {
@@ -15,16 +24,41 @@ export class CourseRepository extends BaseRepository<Course, CreateCourseRequest
       course_group: row.course_group,
       creation_date: row.creation_date,
       course_passing_grade: row.course_passing_grade,
+      course_credit: row.course_credit,
+      teacher_name: (row as any).teacher_name ?? null,
       course_status: row.course_status,
-      teacher_id: row.teacher_id
+      teacher_id: row.teacher_id,
     };
   }
 
   // Override findById to accept string
   async findById(id: string | number): Promise<Course | null> {
-    const query = `SELECT * FROM ${this.tableName} WHERE course_id = ?`;
-    const results = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [id]);
+    const query = `
+      SELECT c.*, u.full_name AS teacher_name
+      FROM ${this.tableName} c
+      LEFT JOIN teacher t ON c.teacher_id = t.teacher_id
+      LEFT JOIN user u ON t.user_id = u.user_id
+      WHERE c.course_id = ?
+    `;
+    const results = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [
+      id,
+    ]);
     return results.length > 0 ? this.mapRowToEntity(results[0] as any) : null;
+  }
+
+  async findAll(limit: number = 50, offset: number = 0): Promise<Course[]> {
+    const query = `
+      SELECT c.*, u.full_name AS teacher_name
+      FROM ${this.tableName} c
+      LEFT JOIN teacher t ON c.teacher_id = t.teacher_id
+      LEFT JOIN user u ON t.user_id = u.user_id
+      LIMIT ? OFFSET ?
+    `;
+    const rows = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [
+      limit,
+      offset,
+    ]);
+    return rows.map((row: any) => this.mapRowToEntity(row));
   }
 
   // Override delete to accept string
@@ -36,64 +70,74 @@ export class CourseRepository extends BaseRepository<Course, CreateCourseRequest
 
   async create(data: CreateCourseRequest): Promise<Course> {
     const query = `
-      INSERT INTO ${this.tableName} (course_name, course_group, course_passing_grade, course_status, teacher_id) 
-      VALUES (?, ?, ?, ?, ?)
+      INSERT INTO ${this.tableName} (course_name, course_group, course_passing_grade, course_credit, course_status, teacher_id) 
+      VALUES (?, ?, ?, ?, ?, ?)
     `;
-    
+
     await DatabaseUtils.executeQuery(query, [
       data.course_name,
       data.course_group || null,
-      data.course_passing_grade || 50,
-      data.course_status || 'active',
-      data.teacher_id
+      data.course_passing_grade ?? 50,
+      data.course_credit ?? 3,
+      data.course_status || "active",
+      data.teacher_id,
     ]);
-    
+
     const insertId = await DatabaseUtils.getLastInsertId();
     const newCourse = await this.findById(insertId);
-    
+
     if (!newCourse) {
-      throw new Error('Failed to create course');
+      throw new Error("Failed to create course");
     }
-    
+
     return newCourse;
   }
 
-  async update(id: string | number, data: UpdateCourseRequest): Promise<Course | null> {
+  async update(
+    id: string | number,
+    data: UpdateCourseRequest
+  ): Promise<Course | null> {
     const updates: string[] = [];
     const values: any[] = [];
-    
+
     if (data.course_name !== undefined) {
-      updates.push('course_name = ?');
+      updates.push("course_name = ?");
       values.push(data.course_name);
     }
-    
+
     if (data.course_group !== undefined) {
-      updates.push('course_group = ?');
+      updates.push("course_group = ?");
       values.push(data.course_group);
     }
-    
+
     if (data.course_passing_grade !== undefined) {
-      updates.push('course_passing_grade = ?');
+      updates.push("course_passing_grade = ?");
       values.push(data.course_passing_grade);
     }
-    
+    if (data.course_credit !== undefined) {
+      updates.push("course_credit = ?");
+      values.push(data.course_credit);
+    }
+
     if (data.course_status !== undefined) {
-      updates.push('course_status = ?');
+      updates.push("course_status = ?");
       values.push(data.course_status);
     }
-    
+
     if (data.teacher_id !== undefined) {
-      updates.push('teacher_id = ?');
+      updates.push("teacher_id = ?");
       values.push(data.teacher_id);
     }
-    
+
     if (updates.length === 0) {
       return this.findById(id);
     }
-    
+
     values.push(id);
-    const query = `UPDATE ${this.tableName} SET ${updates.join(', ')} WHERE course_id = ?`;
-    
+    const query = `UPDATE ${this.tableName} SET ${updates.join(
+      ", "
+    )} WHERE course_id = ?`;
+
     await DatabaseUtils.executeQuery(query, values);
     return this.findById(id);
   }
@@ -101,39 +145,51 @@ export class CourseRepository extends BaseRepository<Course, CreateCourseRequest
   // Additional course-specific methods
   async findByTeacher(teacher_id: number): Promise<Course[]> {
     const query = `SELECT * FROM ${this.tableName} WHERE teacher_id = ?`;
-    const rows = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [teacher_id]);
-    
+    const rows = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [
+      teacher_id,
+    ]);
+
     return rows.map((row: any) => this.mapRowToEntity(row));
   }
 
-  async findByStatus(status: 'active' | 'inactive' | 'archived'): Promise<Course[]> {
+  async findByStatus(
+    status: "active" | "inactive" | "archived"
+  ): Promise<Course[]> {
     const query = `SELECT * FROM ${this.tableName} WHERE course_status = ?`;
-    const rows = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [status]);
-    
+    const rows = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [
+      status,
+    ]);
+
     return rows.map((row: any) => this.mapRowToEntity(row));
   }
 
   async searchByName(searchTerm: string): Promise<Course[]> {
     const query = `SELECT * FROM ${this.tableName} WHERE course_name LIKE ?`;
-    const rows = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [`%${searchTerm}%`]);
-    
+    const rows = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [
+      `%${searchTerm}%`,
+    ]);
+
     return rows.map((row: any) => this.mapRowToEntity(row));
   }
 
-  async findWithTeacherInfo(id: string | number): Promise<CourseWithTeacher | null> {
+  async findWithTeacherInfo(
+    id: string | number
+  ): Promise<CourseWithTeacher | null> {
     const query = `
       SELECT 
         c.*,
-        t.user_id, t.teacher_id, t.certificate, t.faculty_id
+        t.user_id, t.teacher_id, t.certificate, t.faculty_id,
+        u.full_name as teacher_name
       FROM ${this.tableName} c
-      JOIN teacher t ON c.teacher_id = t.user_id
+      LEFT JOIN teacher t ON c.teacher_id = t.teacher_id
+      LEFT JOIN user u ON t.user_id = u.user_id
       WHERE c.course_id = ?
     `;
-    
+
     const rows = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [id]);
-    
+
     if (rows.length === 0) return null;
-    
+
     const row: any = rows[0];
     return {
       course_id: row.course_id,
@@ -141,14 +197,15 @@ export class CourseRepository extends BaseRepository<Course, CreateCourseRequest
       course_group: row.course_group,
       creation_date: row.creation_date,
       course_passing_grade: row.course_passing_grade,
+      course_credit: row.course_credit,
       course_status: row.course_status,
       teacher_id: row.teacher_id,
       teacher: {
         user_id: row.user_id,
         teacher_id: row.teacher_id,
         certificate: row.certificate,
-        faculty_id: row.faculty_id
-      }
+        faculty_id: row.faculty_id,
+      },
     };
   }
 }

@@ -24,9 +24,9 @@ export function LoginForm({
     <div className={cn("flex flex-col gap-6", className)} {...props}>
       <Card>
         <CardHeader>
-          <CardTitle>Đăng nhập</CardTitle>
+          <CardTitle>Login</CardTitle>
           <CardDescription>
-            Nhập email của bạn bên dưới để đăng nhập vào tài khoản
+            Enter your email below to log in to your account
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -34,18 +34,18 @@ export function LoginForm({
             <FieldGroup>
               <Field>
                 <FieldLabel htmlFor="email">Email</FieldLabel>
-                <Input id="email" type="email" placeholder="" required />
+                <Input id="email" name="email" type="email" required />
               </Field>
               <Field>
                 <div className="flex items-center">
-                  <FieldLabel htmlFor="password">Mật khẩu</FieldLabel>
+                  <FieldLabel htmlFor="password">Password</FieldLabel>
                 </div>
-                <Input id="password" type="password" required />
+                <Input id="password" name="password" type="password" required />
               </Field>
               <Field>
-                <Button type="submit">Đăng nhập</Button>
+                <Button type="submit">Login</Button>
                 <FieldDescription className="text-center">
-                  Bạn chưa có tài khoản? <a href="/register">Đăng ký</a>
+                  Don't have an account? <a href="/register">Sign up</a>
                 </FieldDescription>
               </Field>
             </FieldGroup>
