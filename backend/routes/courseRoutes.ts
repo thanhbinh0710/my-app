@@ -8,15 +8,35 @@ const courseController = new CourseController();
 // Apply middleware to all routes
 router.use(ensureDbConnection);
 
-// GET /api/courses - Get all courses with pagination
-// Query params: limit, offset
+// GET /api/courses - Get all courses with pagination and optional filters
+// Query params: limit, offset, course_group, min_credit, teacher_name, sort_by
 router.get('/', async (req: Request, res: Response) => {
   try {
-    const limit = parseInt(req.query.limit as string) || 50;
-    const offset = parseInt(req.query.offset as string) || 0;
+    // Check if any filter parameters are provided
+    const hasFilters = req.query.course_group || req.query.min_credit || req.query.teacher_name || req.query.sort_by;
     
-    const result = await courseController.getCourses(limit, offset);
-    return res.status(result.success ? 200 : 400).json(result);
+    if (hasFilters) {
+      // Use stored procedure with filters
+      const course_group = req.query.course_group as string | undefined;
+      const min_credit = req.query.min_credit ? parseInt(req.query.min_credit as string) : null;
+      const teacher_name = req.query.teacher_name as string | undefined;
+      const sort_by = req.query.sort_by as string | undefined;
+      
+      const result = await courseController.getCoursesWithFilters(
+        course_group || null,
+        min_credit,
+        teacher_name || null,
+        sort_by || null
+      );
+      return res.status(result.success ? 200 : 400).json(result);
+    } else {
+      // Use regular pagination
+      const limit = parseInt(req.query.limit as string) || 50;
+      const offset = parseInt(req.query.offset as string) || 0;
+      
+      const result = await courseController.getCourses(limit, offset);
+      return res.status(result.success ? 200 : 400).json(result);
+    }
   } catch (error) {
     console.error('Route Error:', error);
     return res.status(500).json({ 
@@ -87,6 +107,22 @@ router.get('/status/:status', async (req: Request, res: Response) => {
     
     const result = await courseController.getCoursesByStatus(status);
     return res.status(result.success ? 200 : 400).json(result);
+  } catch (error) {
+    console.error('Route Error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error' 
+    });
+  }
+});
+
+// GET /api/courses/:course_id/details - Get course details with students (using sp_GetCourseDetailsWithStudents)
+router.get('/:course_id/details', async (req: Request, res: Response) => {
+  try {
+    const course_id = req.params.course_id;
+    
+    const result = await courseController.getCourseDetailsWithStudents(course_id);
+    return res.status(result.success ? 200 : 404).json(result);
   } catch (error) {
     console.error('Route Error:', error);
     return res.status(500).json({ 
@@ -211,6 +247,29 @@ router.delete('/:course_id', async (req: Request, res: Response) => {
   }
 });
 
+// GET /api/courses/statistics/teachers - Get statistics by teacher (using sp_GetCourseStatisticsByTeacher)
+// Query params: faculty_id, min_students, min_courses
+router.get('/statistics/teachers', async (req: Request, res: Response) => {
+  try {
+    const faculty_id = req.query.faculty_id ? parseInt(req.query.faculty_id as string) : null;
+    const min_students = req.query.min_students ? parseInt(req.query.min_students as string) : null;
+    const min_courses = req.query.min_courses ? parseInt(req.query.min_courses as string) : null;
+    
+    const result = await courseController.getCourseStatisticsByTeacher(
+      faculty_id,
+      min_students,
+      min_courses
+    );
+    return res.status(result.success ? 200 : 400).json(result);
+  } catch (error) {
+    console.error('Route Error:', error);
+    return res.status(500).json({ 
+      success: false, 
+      error: 'Internal server error' 
+    });
+  }
+});
+
 // GET /api/courses/statistics/faculty - Get statistics by faculty
 router.get('/statistics/faculty', async (req: Request, res: Response) => {
   try {
@@ -225,10 +284,12 @@ router.get('/statistics/faculty', async (req: Request, res: Response) => {
   }
 });
 
-// GET /api/courses/student/:student_id/gpa - Get student GPA
-router.get('/student/:student_id/gpa', async (req: Request, res: Response) => {
+// GET /api/courses/student/:student_id - Get student course info (GPA, progress, completed credits)
+// Query params: roadmap_id (optional, for completed credits calculation)
+router.get('/student/:student_id', async (req: Request, res: Response) => {
   try {
     const student_id = parseInt(req.params.student_id);
+    const roadmap_id = req.query.roadmap_id ? parseInt(req.query.roadmap_id as string) : null;
     
     if (isNaN(student_id)) {
       return res.status(400).json({
@@ -237,8 +298,28 @@ router.get('/student/:student_id/gpa', async (req: Request, res: Response) => {
       });
     }
     
-    const result = await courseController.getStudentGPA(student_id);
-    return res.status(result.success ? 200 : 400).json(result);
+    // Get GPA
+    const gpaResult = await courseController.getStudentGPA(student_id);
+    
+    // Get roadmap progress
+    const progressResult = await courseController.calculateRoadmapProgress(student_id);
+    
+    // Get completed credits if roadmap_id is provided
+    let completedCredits = null;
+    if (roadmap_id && !isNaN(roadmap_id)) {
+      const creditsResult = await courseController.calculateCompletedCredits(student_id, roadmap_id);
+      completedCredits = creditsResult.data?.completed_credits || 0;
+    }
+    
+    return res.status(200).json({
+      success: true,
+      data: {
+        student_id,
+        gpa: gpaResult.data?.gpa || 0,
+        roadmap_progress: progressResult.data?.progress || 0,
+        ...(completedCredits !== null && { completed_credits: completedCredits, roadmap_id })
+      }
+    });
   } catch (error) {
     console.error('Route Error:', error);
     return res.status(500).json({ 

@@ -238,4 +238,112 @@ export class CourseController {
       };
     }
   }
+
+  /**
+   * Get courses with filters
+   */
+  async getCoursesWithFilters(
+    course_group?: string | null,
+    min_credit?: number | null,
+    teacher_name?: string | null,
+    sort_by?: string | null
+  ) {
+    try {
+      const courses = await this.courseService.getCoursesWithFilters(
+        course_group,
+        min_credit,
+        teacher_name,
+        sort_by
+      );
+      return {
+        success: true,
+        data: courses
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Không thể lấy danh sách môn học'
+      };
+    }
+  }
+
+  /**
+   * Get course statistics by teacher
+   */
+  async getCourseStatisticsByTeacher(
+    faculty_id?: number | null,
+    min_students?: number | null,
+    min_courses?: number | null
+  ) {
+    try {
+      const stats = await this.courseService.getCourseStatisticsByTeacher(
+        faculty_id,
+        min_students,
+        min_courses
+      );
+      return {
+        success: true,
+        data: stats
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Không thể lấy thống kê giảng viên'
+      };
+    }
+  }
+
+  /**
+   * Get course details with students
+   */
+  async getCourseDetailsWithStudents(course_id: string) {
+    try {
+      const details = await this.courseService.getCourseDetailsWithStudents(course_id);
+      return {
+        success: true,
+        data: details
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Không thể lấy chi tiết môn học'
+      };
+    }
+  }
+
+  /**
+   * Calculate completed credits
+   */
+  async calculateCompletedCredits(student_id: number, roadmap_id: number) {
+    try {
+      const credits = await this.courseService.calculateCompletedCredits(student_id, roadmap_id);
+      return {
+        success: true,
+        data: { student_id, roadmap_id, completed_credits: credits }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Không thể tính số tín chỉ hoàn thành'
+      };
+    }
+  }
+
+  /**
+   * Calculate roadmap progress
+   */
+  async calculateRoadmapProgress(student_id: number) {
+    try {
+      const progress = await this.courseService.calculateRoadmapProgress(student_id);
+      return {
+        success: true,
+        data: { student_id, progress }
+      };
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : 'Không thể tính tiến độ roadmap'
+      };
+    }
+  }
 }

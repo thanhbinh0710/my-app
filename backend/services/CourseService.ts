@@ -179,4 +179,90 @@ export class CourseService {
     const courses = await this.courseRepository.findByStatus(status);
     return courses;
   }
+
+  /**
+   * Get courses with filters (using sp_GetCoursesWithFilters)
+   */
+  async getCoursesWithFilters(
+    course_group?: string | null,
+    min_credit?: number | null,
+    teacher_name?: string | null,
+    sort_by?: string | null
+  ) {
+    try {
+      const results = await DatabaseUtils.callProcedure('sp_GetCoursesWithFilters', [
+        course_group || null,
+        min_credit || null,
+        teacher_name || null,
+        sort_by || 'course_id'
+      ]);
+      return results;
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to fetch courses with filters');
+    }
+  }
+
+  /**
+   * Get course statistics by teacher (using sp_GetCourseStatisticsByTeacher)
+   */
+  async getCourseStatisticsByTeacher(
+    faculty_id?: number | null,
+    min_students?: number | null,
+    min_courses?: number | null
+  ) {
+    try {
+      const results = await DatabaseUtils.callProcedure('sp_GetCourseStatisticsByTeacher', [
+        faculty_id || null,
+        min_students || null,
+        min_courses || null
+      ]);
+      return results;
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to fetch teacher statistics');
+    }
+  }
+
+  /**
+   * Get course details with enrolled students (using sp_GetCourseDetailsWithStudents)
+   */
+  async getCourseDetailsWithStudents(course_id: string) {
+    try {
+      const results = await DatabaseUtils.callProcedure('sp_GetCourseDetailsWithStudents', [course_id]);
+      // This procedure returns 2 result sets:
+      // [0] = course details
+      // [1] = enrolled students
+      return {
+        courseDetails: results[0]?.[0] || null,
+        students: results[1] || []
+      };
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to fetch course details');
+    }
+  }
+
+  /**
+   * Calculate completed credits for a student in a roadmap (using fn_CalculateCompletedCredits)
+   */
+  async calculateCompletedCredits(student_id: number, roadmap_id: number) {
+    try {
+      const query = 'SELECT fn_CalculateCompletedCredits(?, ?) as completed_credits';
+      const result = await DatabaseUtils.executeQuery(query, [student_id, roadmap_id]);
+      return result[0]?.completed_credits || 0;
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to calculate completed credits');
+    }
+  }
+
+  /**
+   * Calculate roadmap progress for a student (using fn_CalculateRoadmapProgress)
+   */
+  async calculateRoadmapProgress(student_id: number) {
+    try {
+      const query = 'SELECT fn_CalculateRoadmapProgress(?) as progress';
+      const result = await DatabaseUtils.executeQuery(query, [student_id]);
+      return result[0]?.progress || 0;
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to calculate roadmap progress');
+    }
+  }
 }
