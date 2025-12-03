@@ -1,12 +1,19 @@
+"use client";
+
 import {
   BookOpen,
   LayoutDashboard,
   Users,
-  BarChart3,
   Settings,
   LogOut,
   X,
+  GraduationCap,
+  FileText,
+  Award,
 } from "lucide-react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
+import { useAuth } from "@/hooks/useAuth";
 const Sidebar = ({
   isOpen,
   onClose,
@@ -14,13 +21,46 @@ const Sidebar = ({
   isOpen: boolean;
   onClose: () => void;
 }) => {
-  const menuItems = [
-    { name: "Tổng quan", icon: LayoutDashboard, active: true },
-    { name: "Khóa học", icon: BookOpen, active: false },
-    { name: "Học viên", icon: Users, active: false },
-    { name: "Phân tích", icon: BarChart3, active: false },
-    { name: "Cài đặt", icon: Settings, active: false },
-  ];
+  const { logout, loading, user } = useAuth();
+
+  // Define menu items based on user role
+  const getMenuItems = (userRole: string) => {
+    switch (userRole) {
+      case "student":
+        return [
+          { name: "My Courses", icon: BookOpen, href: "/my-courses" },
+          { name: "Quiz", icon: FileText, href: "/quiz" },
+        ];
+
+      case "teacher":
+        return [
+          { name: "My Courses", icon: BookOpen, href: "/my-courses" },
+          { name: "Students", icon: GraduationCap, href: "/students" },
+          { name: "Quiz Management", icon: FileText, href: "/quiz-management" },
+        ];
+
+      case "admin":
+      default:
+        return [
+          { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
+          { name: "Faculty", icon: Users, href: "/faculty" },
+          { name: "Courses", icon: BookOpen, href: "/courses" },
+          { name: "Users", icon: Users, href: "/users" },
+        ];
+    }
+  };
+
+  const menuItems = getMenuItems(user?.role || "admin");
+  const pathname = usePathname();
+
+  const handleLogout = async () => {
+    if (loading) return;
+    try {
+      await logout();
+    } catch (error) {
+      console.error("Logout error:", error);
+    }
+  };
 
   return (
     <>
@@ -42,25 +82,37 @@ const Sidebar = ({
         </div>
 
         <nav className="p-4 space-y-2">
-          {menuItems.map((item) => (
-            <button
-              key={item.name}
-              className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
-                item.active
-                  ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
-                  : "text-slate-400 hover:bg-blue-800 hover:text-white cursor-pointer"
-              }`}
-            >
-              <item.icon className="w-5 h-5 mr-3" />
-              {item.name}
-            </button>
-          ))}
+          {menuItems.map((item) => {
+            const isActive =
+              pathname === item.href || pathname?.startsWith(String(item.href));
+
+            return (
+              <Link
+                key={item.name}
+                href={item.href}
+                onClick={() => onClose()}
+                aria-current={isActive ? "page" : undefined}
+                className={`flex items-center w-full px-4 py-3 text-sm font-medium rounded-xl transition-colors ${
+                  isActive
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20"
+                    : "text-slate-400 hover:bg-blue-800 hover:text-white cursor-pointer"
+                }`}
+              >
+                <item.icon className="w-5 h-5 mr-3" />
+                {item.name}
+              </Link>
+            );
+          })}
         </nav>
 
         <div className="absolute bottom-0 w-full p-4 border-t border-slate-200">
-          <button className="flex items-center w-full px-4 py-2 text-sm font-medium text-slate-400 rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors cursor-pointer">
+          <button
+            onClick={handleLogout}
+            disabled={loading}
+            className="flex items-center w-full px-4 py-2 text-sm font-medium text-slate-400 rounded-lg hover:bg-red-500/10 hover:text-red-500 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+          >
             <LogOut className="w-5 h-5 mr-3" />
-            Đăng xuất
+            {loading ? "Logging out..." : "Logout"}
           </button>
         </div>
       </aside>
