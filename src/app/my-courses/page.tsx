@@ -2,100 +2,70 @@
 import { useEffect, useState } from "react";
 import Sidebar from "@/components/layout/Sidebar";
 import Navbar from "@/components/layout/Navbar";
+import { useAuth } from "@/hooks/useAuth";
 import {
   BookOpen,
   Clock,
-  Users,
   CheckCircle,
   Award,
-  TrendingUp,
-  MapPin,
   GraduationCap,
+  Calendar,
 } from "lucide-react";
 
 export default function MyCoursesPage() {
+  const { user } = useAuth();
   const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const [enrolledCourses, setEnrolledCourses] = useState<any[]>([]);
-  const [availableCourses, setAvailableCourses] = useState<any[]>([]);
-  const [studentStats, setStudentStats] = useState<any>(null);
+  const [teacherCourses, setTeacherCourses] = useState<any[]>([]);
+  const [teacherInfo, setTeacherInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<"enrolled" | "available">(
-    "enrolled"
-  );
 
   useEffect(() => {
     let mounted = true;
 
     async function loadData() {
+      if (!user) return;
+
       try {
         setLoading(true);
 
-        // Load enrolled courses, available courses, and student stats in parallel
-        const [enrolledCoursesRes, availableCoursesRes, statsRes] =
-          await Promise.all([
-            fetch("/api/my-courses", { credentials: "include" }),
-            fetch("/api/courses", { credentials: "include" }),
-            fetch("/api/students/me/stats", { credentials: "include" }),
-          ]);
+        // Load teacher-specific data
+        const [teacherInfoRes, coursesRes] = await Promise.all([
+          fetch(`/api/teachers/${user.user_id}/with-info`, {
+            credentials: "include",
+          }),
+          fetch(`/api/courses/teacher/${user.user_id}`, { 
+            credentials: "include" 
+          }),
+        ]);
 
         if (!mounted) return;
 
-        // Handle enrolled courses response
-        let enrolledCoursesData: any[] = [];
-        if (enrolledCoursesRes.ok) {
-          const enrolledData = await enrolledCoursesRes.json();
-          if (
-            enrolledData.success &&
-            enrolledData.data &&
-            enrolledData.data.courses
-          ) {
-            enrolledCoursesData = enrolledData.data.courses;
-            setEnrolledCourses(enrolledCoursesData);
-          } else {
-            setEnrolledCourses([]);
+        // Handle teacher info response
+        if (teacherInfoRes.ok) {
+          const teacherData = await teacherInfoRes.json();
+          if (teacherData.success && teacherData.data) {
+            setTeacherInfo(teacherData.data);
           }
-        } else {
-          setEnrolledCourses([]);
         }
 
-        // Handle available courses response
-        if (availableCoursesRes.ok) {
-          const availableData = await availableCoursesRes.json();
-          if (
-            availableData.success &&
-            availableData.data &&
-            availableData.data.courses
-          ) {
-            // Get enrolled course IDs
-            const enrolledIds = enrolledCoursesData.map(
-              (c: any) => c.course_id
-            );
-
-            // Filter out already enrolled courses
-            const available = availableData.data.courses.filter(
-              (course: any) => !enrolledIds.includes(course.course_id)
-            );
-            setAvailableCourses(available);
+        // Handle courses response - get courses taught by this teacher
+        if (coursesRes.ok) {
+          const coursesData = await coursesRes.json();
+          if (coursesData.success && coursesData.data) {
+            // coursesData.data is directly the array of courses
+            const courses = Array.isArray(coursesData.data) ? coursesData.data : [];
+            setTeacherCourses(courses);
           } else {
-            setAvailableCourses([]);
+            setTeacherCourses([]);
           }
         } else {
-          setAvailableCourses([]);
-        }
-
-        // Handle stats response
-        if (statsRes.ok) {
-          const statsData = await statsRes.json();
-          if (statsData.success && statsData.data) {
-            setStudentStats(statsData.data);
-          }
+          setTeacherCourses([]);
         }
       } catch (error) {
         console.error("Load data error:", error);
         if (mounted) {
-          setEnrolledCourses([]);
-          setAvailableCourses([]);
-          setStudentStats(null);
+          setTeacherCourses([]);
+          setTeacherInfo(null);
         }
       } finally {
         if (mounted) {
@@ -109,7 +79,7 @@ export default function MyCoursesPage() {
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [user]);
 
   return (
     <div className="flex h-screen bg-slate-50 overflow-hidden font-sans">
@@ -122,27 +92,27 @@ export default function MyCoursesPage() {
           <div className="max-w-full mx-auto space-y-6 p-6 bg-white rounded-xl shadow-sm border border-slate-100">
             <div>
               <h1 className="text-2xl font-bold text-slate-800">
-                My Academic Dashboard
+                Teacher Dashboard
               </h1>
               <p className="text-slate-500 mt-1">
-                Track your learning progress and academic achievements
+                Manage your courses and track student progress
               </p>
             </div>
 
-            {/* Student Statistics */}
-            {studentStats && (
+            {/* Teacher Statistics */}
+            {teacherInfo && (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
                 <div className="bg-white border border-gray-200 p-6 rounded-xl">
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-blue-600 text-sm font-medium">
-                        Credits Earned
+                        My Courses
                       </p>
                       <p className="text-3xl font-bold text-blue-700">
-                        {studentStats.total_credit_earn || 0}
+                        {teacherCourses.length}
                       </p>
                     </div>
-                    <Award className="h-10 w-10 text-blue-500" />
+                    <BookOpen className="h-10 w-10 text-blue-500" />
                   </div>
                 </div>
 
@@ -150,13 +120,17 @@ export default function MyCoursesPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-green-600 text-sm font-medium">
-                        Courses Registered
+                        Total Credits
                       </p>
                       <p className="text-3xl font-bold text-green-700">
-                        {studentStats.total_course_register || 0}
+                        {teacherCourses.reduce(
+                          (total, course) =>
+                            total + (course.course_credit || 0),
+                          0
+                        )}
                       </p>
                     </div>
-                    <BookOpen className="h-10 w-10 text-green-500" />
+                    <Award className="h-10 w-10 text-green-500" />
                   </div>
                 </div>
 
@@ -164,10 +138,14 @@ export default function MyCoursesPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-purple-600 text-sm font-medium">
-                        Courses Completed
+                        Active Courses
                       </p>
                       <p className="text-3xl font-bold text-purple-700">
-                        {studentStats.total_course_complete || 0}
+                        {
+                          teacherCourses.filter(
+                            (course) => course.course_status === "active"
+                          ).length
+                        }
                       </p>
                     </div>
                     <CheckCircle className="h-10 w-10 text-purple-500" />
@@ -178,27 +156,21 @@ export default function MyCoursesPage() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-orange-600 text-sm font-medium">
-                        Completion Rate
+                        Faculty
                       </p>
-                      <p className="text-3xl font-bold text-orange-700">
-                        {studentStats.total_course_register > 0
-                          ? Math.round(
-                              (studentStats.total_course_complete /
-                                studentStats.total_course_register) *
-                                100
-                            )
-                          : 0}
-                        %
+                      <p className="text-lg font-bold text-orange-700">
+                        {teacherInfo.faculty_name ||
+                          `ID: ${teacherInfo.faculty_id}`}
                       </p>
                     </div>
-                    <TrendingUp className="h-10 w-10 text-orange-500" />
+                    <Award className="h-10 w-10 text-orange-500" />
                   </div>
                 </div>
               </div>
             )}
 
-            {/* Academic Information */}
-            {studentStats && (
+            {/* Teacher Academic Information */}
+            {teacherInfo && (
               <div className="bg-slate-50 rounded-xl p-6 mb-6">
                 <h3 className="text-lg font-semibold text-slate-800 mb-4 flex items-center gap-2">
                   <GraduationCap className="h-5 w-5" />
@@ -206,53 +178,24 @@ export default function MyCoursesPage() {
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="flex items-center gap-3 text-slate-600">
-                    <MapPin className="h-4 w-4" />
-                    <span className="font-medium">Faculty:</span>
-                    <span>
-                      {studentStats.faculty_name ||
-                        `Faculty ${studentStats.faculty_id}`}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-3 text-slate-600">
-                    <BookOpen className="h-4 w-4" />
-                    <span className="font-medium">Roadmap:</span>
-                    <span>
-                      {studentStats.roadmap_name ||
-                        `Roadmap ${studentStats.roadmap_id}`}
-                    </span>
+                    <Award className="h-4 w-4" />
+                    <span className="font-medium">Certificate:</span>
+                    <span>{teacherInfo.certificate || "Not specified"}</span>
                   </div>
                 </div>
               </div>
             )}
 
+
+
+
+
             {/* My Courses Section */}
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-slate-800">
-                  My Courses
+                  Courses I Teach
                 </h2>
-                <div className="flex bg-slate-100 rounded-lg p-1">
-                  <button
-                    onClick={() => setActiveTab("enrolled")}
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                      activeTab === "enrolled"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Enrolled ({enrolledCourses.length})
-                  </button>
-                  <button
-                    onClick={() => setActiveTab("available")}
-                    className={`px-4 py-2 text-sm font-medium rounded-md transition-colors ${
-                      activeTab === "available"
-                        ? "bg-white text-slate-900 shadow-sm"
-                        : "text-slate-600 hover:text-slate-900"
-                    }`}
-                  >
-                    Available ({availableCourses.length})
-                  </button>
-                </div>
               </div>
             </div>
 
@@ -269,29 +212,21 @@ export default function MyCoursesPage() {
                   </div>
                 ))}
               </div>
-            ) : (activeTab === "enrolled" ? enrolledCourses : availableCourses)
-                .length === 0 ? (
+            ) : teacherCourses.length === 0 ? (
               <div className="text-center py-12">
                 <BookOpen className="w-16 h-16 text-slate-300 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-slate-600 mb-2">
-                  {activeTab === "enrolled"
-                    ? "No Courses Enrolled"
-                    : "No Available Courses"}
+                  No Courses Assigned
                 </h3>
                 <p className="text-slate-500">
-                  {activeTab === "enrolled"
-                    ? "You haven't enrolled in any courses yet."
-                    : "No additional courses are available for enrollment."}
+                  You don't have any courses assigned to teach yet.
                 </p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {(activeTab === "enrolled"
-                  ? enrolledCourses
-                  : availableCourses
-                ).map((course: any) => (
+                {teacherCourses.map((course: any) => (
                   <div
-                    key={course.id || course.course_id}
+                    key={course.course_id}
                     className="bg-white p-6 rounded-xl border border-slate-200 hover:shadow-lg transition-shadow"
                   >
                     <div className="flex items-start justify-between mb-4">
@@ -301,67 +236,53 @@ export default function MyCoursesPage() {
                         </div>
                         <div>
                           <h3 className="font-semibold text-slate-800">
-                            {course.name}
+                            {course.course_name}
                           </h3>
                           <p className="text-sm text-slate-500">
-                            {course.code}
+                            {course.course_id}
                           </p>
                         </div>
                       </div>
+                      <span
+                        className={`px-2 py-1 rounded text-xs font-medium ${
+                          course.course_status === "active"
+                            ? "bg-green-100 text-green-800"
+                            : "bg-yellow-100 text-yellow-800"
+                        }`}
+                      >
+                        {course.course_status}
+                      </span>
                     </div>
 
                     <div className="space-y-3">
                       <div className="flex items-center gap-2 text-sm text-slate-600">
-                        <Users className="w-4 h-4" />
-                        {course.instructor}
+                        <Award className="w-4 h-4" />
+                        <span>{course.course_credit} credits</span>
                       </div>
 
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-slate-600">Progress</span>
-                          <span className="font-medium">
-                            {course.progress || 0}%
-                          </span>
-                        </div>
-                        <div className="w-full bg-slate-200 rounded-full h-2">
-                          <div
-                            className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                            style={{ width: `${course.progress || 0}%` }}
-                          ></div>
-                        </div>
-                        <div className="flex items-center gap-2 text-xs text-slate-500">
-                          <CheckCircle className="w-3 h-3" />
-                          {course.completedLessons || 0}/
-                          {course.totalLessons || 0} lessons
-                        </div>
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <CheckCircle className="w-4 h-4" />
+                        <span>
+                          Pass Grade: {course.course_passing_grade || 5}/10
+                        </span>
                       </div>
 
-                      <div className="pt-3 border-t border-slate-100">
-                        <div className="flex items-center gap-2 text-sm text-slate-600">
-                          <Clock className="w-4 h-4" />
-                          <span>
-                            Next lesson: {course.nextLesson || "Not Available"}
-                          </span>
-                        </div>
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <Clock className="w-4 h-4" />
+                        <span>
+                          Group: {course.course_group || "No group"}
+                        </span>
                       </div>
 
-                      {course.grade && (
-                        <div className="pt-2">
-                          <div className="flex items-center gap-2 text-sm">
-                            <span className="text-slate-600">
-                              Current Grade:
-                            </span>
-                            <span className="font-medium text-green-600">
-                              {course.grade}/10
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                      <div className="flex items-center gap-2 text-sm text-slate-600">
+                        <Calendar className="w-4 h-4" />
+                        <span>
+                          Created: {course.creation_date ? new Date(course.creation_date).toLocaleDateString('vi-VN') : 'N/A'}
+                        </span>
+                      </div>
 
                       <button className="w-full mt-4 py-2 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
-                        {activeTab === "enrolled"
-                          ? "Continue Learning"
-                          : "Enroll Now"}
+                        Manage Course
                       </button>
                     </div>
                   </div>
