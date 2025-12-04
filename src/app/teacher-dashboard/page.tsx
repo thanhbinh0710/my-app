@@ -193,7 +193,6 @@ export default function TeacherDashboardPage() {
             <div>
               <div className="flex items-center justify-between mb-6">
                 <h2 className="text-xl font-semibold text-blue-800 flex items-center gap-2">
-                  <BookOpen className="h-5 w-5 text-blue-600" />
                   My Teaching Schedule
                 </h2>
                 <span className="text-sm text-slate-500 bg-blue-100 px-3 py-1 rounded-full">

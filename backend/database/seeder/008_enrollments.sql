@@ -1,6 +1,6 @@
--- Sample enrollment data for K22 students
+-- Sample enrollment data for K22 students  
 INSERT IGNORE INTO enroll (course_id, student_id, start_date, complete_date, grade, progress)
-SELECT 'CO1013', s.student_id, '2024-09-01', '2024-12-15', 8.5, 100
+SELECT 'CO1013', s.student_id, '2024-09-01', '2024-12-15', 8.5, 85
 FROM student s JOIN user u ON s.user_id = u.user_id WHERE u.username = '2213001';
 
 INSERT IGNORE INTO enroll (course_id, student_id, start_date, complete_date, grade, progress)

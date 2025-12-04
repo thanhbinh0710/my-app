@@ -37,6 +37,8 @@ export interface StudentWithUser {
   total_course_complete: number;
   faculty_id: number | null;
   roadmap_id: number | null;
+  faculty_name?: string | null;
+  roadmap_name?: string | null;
   user: {
     id: number;
     email: string;

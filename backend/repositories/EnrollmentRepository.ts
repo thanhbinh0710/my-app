@@ -241,4 +241,79 @@ export class EnrollmentRepository {
       instructor_name: row.instructor_name || "Not Assigned",
     }));
   }
+
+  // Get student courses by user_id (instead of student_id)
+  async getStudentCoursesByUserId(user_id: number): Promise<any[]> {
+    const query = `
+      SELECT 
+        c.course_id,
+        c.course_name,
+        c.course_credit,
+        c.course_status,
+        e.start_date,
+        e.complete_date,
+        e.grade,
+        e.progress,
+        u.full_name as instructor_name,
+        f.faculty_name
+      FROM ${this.tableName} e
+      JOIN course c ON e.course_id = c.course_id
+      JOIN student s ON e.student_id = s.student_id
+      LEFT JOIN teacher t ON c.teacher_id = t.teacher_id
+      LEFT JOIN user u ON t.user_id = u.user_id
+      LEFT JOIN faculty f ON t.faculty_id = f.faculty_id
+      WHERE s.user_id = ?
+      ORDER BY e.start_date DESC
+    `;
+
+    const results = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [
+      user_id,
+    ]);
+    return results.map((row: any) => ({
+      course_id: row.course_id,
+      course_name: row.course_name,
+      course_credit: row.course_credit,
+      course_status: row.course_status,
+      start_date: row.start_date,
+      complete_date: row.complete_date,
+      grade: row.grade,
+      progress: row.progress,
+      instructor_name: row.instructor_name || "Not Assigned",
+      faculty_name: row.faculty_name || "Unknown",
+    }));
+  }
+
+  // Get active courses by user_id
+  async getStudentActiveCoursesbyUserId(user_id: number): Promise<any[]> {
+    const query = `
+      SELECT 
+        c.course_id,
+        c.course_name,
+        c.course_credit,
+        e.start_date,
+        e.grade,
+        e.progress,
+        u.full_name as instructor_name
+      FROM ${this.tableName} e
+      JOIN course c ON e.course_id = c.course_id
+      JOIN student s ON e.student_id = s.student_id
+      LEFT JOIN teacher t ON c.teacher_id = t.teacher_id
+      LEFT JOIN user u ON t.user_id = u.user_id
+      WHERE s.user_id = ? AND e.complete_date IS NULL AND c.course_status = 'active'
+      ORDER BY e.start_date DESC
+    `;
+
+    const results = await DatabaseUtils.executeQuery<RowDataPacket[]>(query, [
+      user_id,
+    ]);
+    return results.map((row: any) => ({
+      course_id: row.course_id,
+      course_name: row.course_name,
+      course_credit: row.course_credit,
+      start_date: row.start_date,
+      grade: row.grade,
+      progress: row.progress || 0,
+      instructor_name: row.instructor_name || "Not Assigned",
+    }));
+  }
 }

@@ -27,10 +27,7 @@ const Sidebar = ({
   const getMenuItems = (userRole: string) => {
     switch (userRole) {
       case "student":
-        return [
-          { name: "My Courses", icon: BookOpen, href: "/my-courses" },
-          { name: "Quiz", icon: FileText, href: "/quiz" },
-        ];
+        return [{ name: "My Courses", icon: BookOpen, href: "/my-courses" }];
 
       case "teacher":
         return [

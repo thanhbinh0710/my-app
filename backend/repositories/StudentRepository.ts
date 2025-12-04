@@ -142,9 +142,12 @@ export class StudentRepository extends BaseRepository<Student, CreateStudentRequ
       SELECT 
         s.user_id, s.student_id, s.admission_date, s.total_credit_earn, 
         s.total_course_register, s.total_course_complete, s.faculty_id, s.roadmap_id,
-        u.user_id as u_user_id, u.email, u.username, u.full_name, u.role
+        u.user_id as u_user_id, u.email, u.username, u.full_name, u.role,
+        f.faculty_name, r.roadmap_name
       FROM ${this.tableName} s
       JOIN user u ON s.user_id = u.user_id
+      LEFT JOIN faculty f ON s.faculty_id = f.faculty_id
+      LEFT JOIN roadmap r ON s.roadmap_id = r.roadmap_id
       WHERE s.user_id = ?
     `;
     
@@ -153,6 +156,7 @@ export class StudentRepository extends BaseRepository<Student, CreateStudentRequ
     if (rows.length === 0) return null;
     
     const row = rows[0];
+    
     return {
       user_id: row.user_id,
       student_id: row.student_id,
@@ -162,6 +166,8 @@ export class StudentRepository extends BaseRepository<Student, CreateStudentRequ
       total_course_complete: row.total_course_complete,
       faculty_id: row.faculty_id,
       roadmap_id: row.roadmap_id,
+      faculty_name: row.faculty_name || null,
+      roadmap_name: row.roadmap_name || null,
       user: {
         id: row.u_user_id,
         email: row.email,

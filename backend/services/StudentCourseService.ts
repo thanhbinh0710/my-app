@@ -15,14 +15,14 @@ export class StudentCourseService {
    */
   async getStudentCourses(student_id: number) {
     try {
-      // Verify student exists
+      // Verify student exists - treat student_id as user_id
       const student = await this.studentRepository.findById(student_id);
       if (!student) {
         throw new Error("Student not found");
       }
 
       const courses =
-        await this.enrollmentRepository.getStudentCoursesWithDetails(
+        await this.enrollmentRepository.getStudentCoursesByUserId(
           student_id
         );
 
@@ -54,13 +54,13 @@ export class StudentCourseService {
    */
   async getStudentActiveCourses(student_id: number) {
     try {
-      // Verify student exists
+      // Verify student exists - treat student_id as user_id
       const student = await this.studentRepository.findById(student_id);
       if (!student) {
         throw new Error("Student not found");
       }
 
-      const courses = await this.enrollmentRepository.getStudentActiveCourses(
+      const courses = await this.enrollmentRepository.getStudentActiveCoursesbyUserId(
         student_id
       );
 
@@ -97,11 +97,11 @@ export class StudentCourseService {
   async getStudentCourseStats(student_id: number) {
     try {
       const allCourses =
-        await this.enrollmentRepository.getStudentCoursesWithDetails(
+        await this.enrollmentRepository.getStudentCoursesByUserId(
           student_id
         );
       const activeCourses =
-        await this.enrollmentRepository.getStudentActiveCourses(student_id);
+        await this.enrollmentRepository.getStudentActiveCoursesbyUserId(student_id);
 
       const completedCourses = allCourses.filter(
         (course) => course.complete_date !== null
