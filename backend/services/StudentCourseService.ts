@@ -21,10 +21,9 @@ export class StudentCourseService {
         throw new Error("Student not found");
       }
 
-      const courses =
-        await this.enrollmentRepository.getStudentCoursesByUserId(
-          student_id
-        );
+      const courses = await this.enrollmentRepository.getStudentCoursesByUserId(
+        student_id
+      );
 
       return {
         student_id,
@@ -60,9 +59,10 @@ export class StudentCourseService {
         throw new Error("Student not found");
       }
 
-      const courses = await this.enrollmentRepository.getStudentActiveCoursesbyUserId(
-        student_id
-      );
+      const courses =
+        await this.enrollmentRepository.getStudentActiveCoursesbyUserId(
+          student_id
+        );
 
       return {
         student_id,
@@ -97,11 +97,11 @@ export class StudentCourseService {
   async getStudentCourseStats(student_id: number) {
     try {
       const allCourses =
-        await this.enrollmentRepository.getStudentCoursesByUserId(
+        await this.enrollmentRepository.getStudentCoursesByUserId(student_id);
+      const activeCourses =
+        await this.enrollmentRepository.getStudentActiveCoursesbyUserId(
           student_id
         );
-      const activeCourses =
-        await this.enrollmentRepository.getStudentActiveCoursesbyUserId(student_id);
 
       const completedCourses = allCourses.filter(
         (course) => course.complete_date !== null

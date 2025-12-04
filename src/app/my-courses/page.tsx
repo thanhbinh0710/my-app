@@ -22,7 +22,9 @@ export default function MyCoursesPage() {
   const [studentInfo, setStudentInfo] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [enrollingCourses, setEnrollingCourses] = useState<Set<string>>(new Set());
+  const [enrollingCourses, setEnrollingCourses] = useState<Set<string>>(
+    new Set()
+  );
 
   useEffect(() => {
     let mounted = true;
@@ -32,24 +34,26 @@ export default function MyCoursesPage() {
 
       try {
         setLoading(true);
-        
+
         // Get student information first
         const studentResponse = await fetch(`/api/students/${user.user_id}`);
         if (!studentResponse.ok) {
-          throw new Error('Failed to fetch student info');
+          throw new Error("Failed to fetch student info");
         }
         const studentData = await studentResponse.json();
-        
+
         if (!studentData.success || !studentData.data) {
-          throw new Error('Student not found');
+          throw new Error("Student not found");
         }
-        
+
         const student = studentData.data;
         // Use user_id instead of student_id for API calls since our backend methods expect user_id
         const student_user_id = student.user_id;
-        
+
         // Fetch student course statistics
-        const statsResponse = await fetch(`/api/enrollments/student/${student_user_id}/stats`);
+        const statsResponse = await fetch(
+          `/api/enrollments/student/${student_user_id}/stats`
+        );
         let studentStats = null;
         if (statsResponse.ok) {
           const statsData = await statsResponse.json();
@@ -57,9 +61,11 @@ export default function MyCoursesPage() {
             studentStats = statsData.data;
           }
         }
-        
+
         // Fetch enrolled courses
-        const enrolledResponse = await fetch(`/api/enrollments/student/${student_user_id}`);
+        const enrolledResponse = await fetch(
+          `/api/enrollments/student/${student_user_id}`
+        );
         let enrolledCoursesData = [];
         if (enrolledResponse.ok) {
           const enrolledData = await enrolledResponse.json();
@@ -67,76 +73,92 @@ export default function MyCoursesPage() {
             enrolledCoursesData = enrolledData.data.courses || [];
           }
         }
-        
+
         // Fetch available courses
-        const availableResponse = await fetch('/api/courses/available');
+        const availableResponse = await fetch("/api/courses/available");
         let availableCoursesData = [];
         if (availableResponse.ok) {
           const availableData = await availableResponse.json();
           if (availableData.success && availableData.data) {
             // Filter out courses the student is already enrolled in
-            const enrolledCourseIds = enrolledCoursesData.map((course: any) => course.course_id);
+            const enrolledCourseIds = enrolledCoursesData.map(
+              (course: any) => course.course_id
+            );
             availableCoursesData = (availableData.data || []).filter(
               (course: any) => !enrolledCourseIds.includes(course.course_id)
             );
           }
         }
-        
+
         if (!mounted) return;
-        
+
         // Set student info with faculty and roadmap
         setStudentInfo({
-          faculty: student.faculty_name || 'Unknown Faculty',
-          roadmap: student.roadmap_name || 'No Roadmap Assigned',
-          credits_earned: studentStats?.completed_credits || student.total_credit_earn || 0,
-          courses_registered: studentStats?.total_courses || student.total_course_register || 0,
-          courses_completed: studentStats?.completed_courses || student.total_course_complete || 0,
-          completion_rate: studentStats?.completion_rate || (
-            student.total_course_register > 0 
-              ? Math.round((student.total_course_complete / student.total_course_register) * 100)
-              : 0
-          ),
+          faculty: student.faculty_name || "Unknown Faculty",
+          roadmap: student.roadmap_name || "No Roadmap Assigned",
+          credits_earned:
+            studentStats?.completed_credits || student.total_credit_earn || 0,
+          courses_registered:
+            studentStats?.total_courses || student.total_course_register || 0,
+          courses_completed:
+            studentStats?.completed_courses ||
+            student.total_course_complete ||
+            0,
+          completion_rate:
+            studentStats?.completion_rate ||
+            (student.total_course_register > 0
+              ? Math.round(
+                  (student.total_course_complete /
+                    student.total_course_register) *
+                    100
+                )
+              : 0),
         });
-        
+
         // Format enrolled courses
         const formattedEnrolled = enrolledCoursesData.map((course: any) => ({
           id: course.course_id,
           course_id: course.course_id,
           course_name: course.course_name,
-          teacher_name: course.instructor || 'Not Assigned',
+          teacher_name: course.instructor || "Not Assigned",
           course_credit: course.credits || course.course_credit || 0,
           progress: course.progress || 0,
-          status: course.complete_date ? 'completed' : 'ongoing',
+          status: course.complete_date ? "completed" : "ongoing",
           grade: course.grade,
           start_date: course.start_date,
           complete_date: course.complete_date,
-          faculty: course.faculty
+          faculty: course.faculty,
         }));
-        
+
         // Format available courses
         const formattedAvailable = availableCoursesData.map((course: any) => ({
           id: course.course_id,
           course_id: course.course_id,
           course_name: course.course_name,
-          teacher_name: course.teacher_name || 'Not Assigned',
+          teacher_name: course.teacher_name || "Not Assigned",
           course_credit: course.course_credit || 0,
           prerequisites: [], // Would need additional API call to get prerequisites
-          description: `${course.course_group || ''} course with ${course.course_credit || 0} credits`.trim(),
+          description: `${course.course_group || ""} course with ${
+            course.course_credit || 0
+          } credits`.trim(),
         }));
-        
+
         setEnrolledCourses(formattedEnrolled);
         setAvailableCourses(formattedAvailable);
         setLoading(false);
-        
       } catch (error) {
-        console.error('Load data error:', error);
+        console.error("Load data error:", error);
         if (mounted) {
           setLoading(false);
-          setError(error instanceof Error ? error.message : 'Failed to load student data');
+          setError(
+            error instanceof Error
+              ? error.message
+              : "Failed to load student data"
+          );
           // Set default values on error
           setStudentInfo({
-            faculty: 'Unknown Faculty',
-            roadmap: 'No Roadmap Assigned',
+            faculty: "Unknown Faculty",
+            roadmap: "No Roadmap Assigned",
             credits_earned: 0,
             courses_registered: 0,
             courses_completed: 0,
@@ -157,27 +179,27 @@ export default function MyCoursesPage() {
 
   const handleEnrollCourse = async (courseId: string) => {
     if (!user || !studentInfo) return;
-    
-    setEnrollingCourses(prev => new Set([...prev, courseId]));
-    
+
+    setEnrollingCourses((prev) => new Set([...prev, courseId]));
+
     try {
       // First get the student record to get the auto-increment student_id
       const studentResponse = await fetch(`/api/students/${user.user_id}`);
       if (!studentResponse.ok) {
-        throw new Error('Failed to get student information');
+        throw new Error("Failed to get student information");
       }
       const studentData = await studentResponse.json();
-      
+
       if (!studentData.success || !studentData.data) {
-        throw new Error('Student not found');
+        throw new Error("Student not found");
       }
 
-      const response = await fetch('/api/enrollments', {
-        method: 'POST',
+      const response = await fetch("/api/enrollments", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
-        credentials: 'include',
+        credentials: "include",
         body: JSON.stringify({
           course_id: courseId,
           student_id: studentData.data.student_id, // Use the auto-increment student_id
@@ -185,24 +207,28 @@ export default function MyCoursesPage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to enroll in course');
+        throw new Error("Failed to enroll in course");
       }
 
       const result = await response.json();
-      
+
       if (result.success) {
         // Show success message
-        alert('Successfully enrolled in the course!');
+        alert("Successfully enrolled in the course!");
         // Refresh the data to show updated enrollment
         window.location.reload();
       } else {
-        throw new Error(result.error || 'Enrollment failed');
+        throw new Error(result.error || "Enrollment failed");
       }
     } catch (error) {
-      console.error('Enrollment error:', error);
-      alert(`Failed to enroll: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error("Enrollment error:", error);
+      alert(
+        `Failed to enroll: ${
+          error instanceof Error ? error.message : "Unknown error"
+        }`
+      );
     } finally {
-      setEnrollingCourses(prev => {
+      setEnrollingCourses((prev) => {
         const newSet = new Set(prev);
         newSet.delete(courseId);
         return newSet;
@@ -346,7 +372,10 @@ export default function MyCoursesPage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {[1, 2, 3, 4].map((i) => (
-                    <div key={i} className="bg-white border border-gray-200 p-6 rounded-xl animate-pulse">
+                    <div
+                      key={i}
+                      className="bg-white border border-gray-200 p-6 rounded-xl animate-pulse"
+                    >
                       <div className="w-3/4 h-4 bg-slate-200 rounded mb-2"></div>
                       <div className="w-1/2 h-8 bg-slate-200 rounded"></div>
                     </div>
@@ -371,11 +400,9 @@ export default function MyCoursesPage() {
                 <h3 className="text-lg font-medium text-red-600 mb-2">
                   Error Loading Data
                 </h3>
-                <p className="text-slate-500 mb-4">
-                  {error}
-                </p>
-                <button 
-                  onClick={() => window.location.reload()} 
+                <p className="text-slate-500 mb-4">{error}</p>
+                <button
+                  onClick={() => window.location.reload()}
                   className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
                 >
                   Retry
@@ -423,8 +450,11 @@ export default function MyCoursesPage() {
                               : "bg-yellow-100 text-yellow-800"
                           }`}
                         >
-                          {course.status === "ongoing" ? "In Progress" : 
-                           course.status === "completed" ? "Completed" : course.status}
+                          {course.status === "ongoing"
+                            ? "In Progress"
+                            : course.status === "completed"
+                            ? "Completed"
+                            : course.status}
                         </span>
                       </div>
 
@@ -534,7 +564,7 @@ export default function MyCoursesPage() {
                           </div>
                         )}
 
-                      <button 
+                      <button
                         onClick={() => handleEnrollCourse(course.course_id)}
                         disabled={enrollingCourses.has(course.course_id)}
                         className="w-full mt-4 py-2 px-4 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

@@ -1,4 +1,4 @@
-// Student related interfaces - matches exact schema design  
+// Student related interfaces - matches exact schema design
 export interface Student {
   user_id: number;
   student_id: string;

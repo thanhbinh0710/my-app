@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { StudentCourseController } from '../../../../../../backend/controllers/StudentCourseController';
-import { createConnection } from '../../../../../../backend/utils/database';
+import { NextRequest, NextResponse } from "next/server";
+import { StudentCourseController } from "../../../../../../backend/controllers/StudentCourseController";
+import { createConnection } from "../../../../../../backend/utils/database";
 
 const studentCourseController = new StudentCourseController();
 
@@ -11,31 +11,35 @@ export async function GET(
   try {
     // Initialize database connection
     await createConnection();
-    
+
     const student_id = parseInt(params.student_id);
-    
+
     if (isNaN(student_id)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid student ID' },
+        { success: false, error: "Invalid student ID" },
         { status: 400 }
       );
     }
 
     // Get student's course statistics directly from controller
-    const result = await studentCourseController.getStudentCourseStats(student_id);
-    
+    const result = await studentCourseController.getStudentCourseStats(
+      student_id
+    );
+
     if (!result.success) {
       return NextResponse.json(result, { status: 400 });
     }
 
     return NextResponse.json(result);
-    
   } catch (error) {
-    console.error('Error fetching student course stats:', error);
+    console.error("Error fetching student course stats:", error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to fetch course statistics' 
+      {
+        success: false,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to fetch course statistics",
       },
       { status: 500 }
     );

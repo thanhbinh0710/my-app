@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from "next/server";
 
 export async function GET(
   request: NextRequest,
@@ -6,10 +6,10 @@ export async function GET(
 ) {
   try {
     const user_id = parseInt(params.user_id);
-    
+
     if (isNaN(user_id)) {
       return NextResponse.json(
-        { success: false, error: 'Invalid user ID' },
+        { success: false, error: "Invalid user ID" },
         { status: 400 }
       );
     }
@@ -18,9 +18,9 @@ export async function GET(
     const response = await fetch(
       `http://127.0.0.1:3001/api/students/${user_id}`,
       {
-        method: 'GET',
+        method: "GET",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
       }
     );
@@ -31,13 +31,13 @@ export async function GET(
 
     const data = await response.json();
     return NextResponse.json(data);
-    
   } catch (error) {
-    console.error('Error fetching student:', error);
+    console.error("Error fetching student:", error);
     return NextResponse.json(
-      { 
-        success: false, 
-        error: error instanceof Error ? error.message : 'Failed to fetch student' 
+      {
+        success: false,
+        error:
+          error instanceof Error ? error.message : "Failed to fetch student",
       },
       { status: 500 }
     );
