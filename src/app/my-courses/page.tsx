@@ -33,8 +33,8 @@ export default function MyCoursesPage() {
           fetch(`/api/teachers/${user.user_id}/with-info`, {
             credentials: "include",
           }),
-          fetch(`/api/courses/teacher/${user.user_id}`, { 
-            credentials: "include" 
+          fetch(`/api/courses/teacher/${user.user_id}`, {
+            credentials: "include",
           }),
         ]);
 
@@ -53,7 +53,9 @@ export default function MyCoursesPage() {
           const coursesData = await coursesRes.json();
           if (coursesData.success && coursesData.data) {
             // coursesData.data is directly the array of courses
-            const courses = Array.isArray(coursesData.data) ? coursesData.data : [];
+            const courses = Array.isArray(coursesData.data)
+              ? coursesData.data
+              : [];
             setTeacherCourses(courses);
           } else {
             setTeacherCourses([]);
@@ -186,10 +188,6 @@ export default function MyCoursesPage() {
               </div>
             )}
 
-
-
-
-
             {/* My Courses Section */}
             <div>
               <div className="flex items-center justify-between mb-6">
@@ -269,15 +267,18 @@ export default function MyCoursesPage() {
 
                       <div className="flex items-center gap-2 text-sm text-slate-600">
                         <Clock className="w-4 h-4" />
-                        <span>
-                          Group: {course.course_group || "No group"}
-                        </span>
+                        <span>Group: {course.course_group || "No group"}</span>
                       </div>
 
                       <div className="flex items-center gap-2 text-sm text-slate-600">
                         <Calendar className="w-4 h-4" />
                         <span>
-                          Created: {course.creation_date ? new Date(course.creation_date).toLocaleDateString('vi-VN') : 'N/A'}
+                          Created:{" "}
+                          {course.creation_date
+                            ? new Date(course.creation_date).toLocaleDateString(
+                                "vi-VN"
+                              )
+                            : "N/A"}
                         </span>
                       </div>
 
