@@ -33,7 +33,13 @@ const Sidebar = ({
         ];
 
       case "teacher":
-        return [{ name: "My Courses", icon: BookOpen, href: "/my-courses" }];
+        return [
+          {
+            name: "Teacher Dashboard",
+            icon: LayoutDashboard,
+            href: "/teacher-dashboard",
+          },
+        ];
 
       case "admin":
       default:
