@@ -277,10 +277,11 @@ export default function CoursesPage() {
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="any">Any Credits</SelectItem>
-                        <SelectItem value="1">1+ Credits</SelectItem>
-                        <SelectItem value="2">2+ Credits</SelectItem>
-                        <SelectItem value="3">3+ Credits</SelectItem>
-                        <SelectItem value="4">4+ Credits</SelectItem>
+                        <SelectItem value="1">1 Credit</SelectItem>
+                        <SelectItem value="2">2 Credits</SelectItem>
+                        <SelectItem value="3">3 Credits</SelectItem>
+                        <SelectItem value="4">4 Credits</SelectItem>
+                        <SelectItem value="5">5 Credits</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>

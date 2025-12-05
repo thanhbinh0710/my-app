@@ -13,6 +13,7 @@ export interface CreateFacultyRequest {
   office_location?: string;
   phone_number?: string;
   email?: string;
+  number_of_teacher_in_faculty?: number;
 }
 
 export interface UpdateFacultyRequest {
@@ -20,4 +21,5 @@ export interface UpdateFacultyRequest {
   office_location?: string;
   phone_number?: string;
   email?: string;
+  number_of_teacher_in_faculty?: number;
 }

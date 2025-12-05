@@ -181,10 +181,10 @@ router.get('/:course_id', async (req: Request, res: Response) => {
 });
 
 // POST /api/courses - Create new course
-// Body: { course_id, course_name, course_group?, course_credit, teacher_id }
+// Body: { course_id, course_name, course_group?, course_credit, teacher_id, course_status? }
 router.post('/', async (req: Request, res: Response) => {
   try {
-    const { course_id, course_name, course_group, course_credit, teacher_id } = req.body;
+    const { course_id, course_name, course_group, course_credit, teacher_id, course_status } = req.body;
     
     // Validate required fields
     if (!course_id || !course_name || !course_credit || !teacher_id) {
@@ -206,11 +206,14 @@ router.post('/', async (req: Request, res: Response) => {
 });
 
 // PUT /api/courses/:course_id - Update course
-// Body: { course_name, course_credit, teacher_id }
+// Body: { course_name, course_credit, teacher_id, course_status? }
 router.put('/:course_id', async (req: Request, res: Response) => {
   try {
     const course_id = req.params.course_id;
-    const { course_name, course_credit, teacher_id } = req.body;
+    const { course_name, course_credit, teacher_id, course_status } = req.body;
+    
+    console.log('PUT /api/courses/:course_id - Request body:', req.body);
+    console.log('course_status received:', course_status);
     
     // Validate required fields
     if (!course_name || !course_credit || !teacher_id) {

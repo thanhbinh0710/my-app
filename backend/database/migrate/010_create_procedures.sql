@@ -135,7 +135,7 @@ BEGIN
     LEFT JOIN enroll e ON c.course_id = e.course_id
     WHERE 
         (p_course_group IS NULL OR p_course_group = '' OR c.course_group = p_course_group)
-        AND (p_min_credit = 0 OR c.course_credit >= p_min_credit)
+        AND (p_min_credit = 0 OR c.course_credit = p_min_credit)
         AND (p_teacher_name IS NULL OR p_teacher_name = '' OR u.full_name LIKE CONCAT('%', p_teacher_name, '%'))
     GROUP BY c.course_id, c.course_name, c.course_group, c.course_credit, 
              c.course_status, u.full_name, f.faculty_name, c.creation_date

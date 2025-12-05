@@ -95,6 +95,11 @@ export function EditFacultyDialog({
           phone_number: formData.phone_number.trim(),
         }),
         ...(formData.email.trim() && { email: formData.email.trim() }),
+        ...(formData.number_of_teacher_in_faculty.trim() && {
+          number_of_teacher_in_faculty: Number(
+            formData.number_of_teacher_in_faculty.trim()
+          ),
+        }),
       };
 
       await onSubmit(faculty.faculty_id, submitData);

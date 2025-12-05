@@ -1,11 +1,21 @@
 import { NextResponse } from "next/server";
+import { NextRequest } from "next/server";
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
     console.log("Courses API called - fetching from backend");
 
+    // Get query params from request
+    const { searchParams } = new URL(request.url);
+    const queryString = searchParams.toString();
+    const backendUrl = queryString 
+      ? `http://127.0.0.1:3001/api/courses?${queryString}`
+      : "http://127.0.0.1:3001/api/courses";
+
+    console.log("Fetching from backend URL:", backendUrl);
+
     // Proxy request to backend
-    const response = await fetch("http://127.0.0.1:3001/api/courses", {
+    const response = await fetch(backendUrl, {
       method: "GET",
     });
 
@@ -70,5 +80,45 @@ export async function GET() {
         ],
       },
     });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  try {
+    console.log("Courses POST API called - creating new course");
+
+    // Get request body
+    const body = await request.json();
+    console.log("Request body:", body);
+
+    // Proxy request to backend
+    const response = await fetch("http://127.0.0.1:3001/api/courses", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(body),
+    });
+
+    console.log("Backend create course response status:", response.status);
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.log("Backend error:", errorText);
+      return NextResponse.json(
+        { error: "Failed to create course in backend" },
+        { status: response.status }
+      );
+    }
+
+    const data = await response.json();
+    console.log("Course created:", data);
+    return NextResponse.json(data);
+  } catch (error) {
+    console.error("Courses POST API proxy error:", error);
+    return NextResponse.json(
+      { error: "Failed to create course", details: error instanceof Error ? error.message : "Unknown error" },
+      { status: 500 }
+    );
   }
 }

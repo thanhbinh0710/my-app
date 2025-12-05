@@ -197,11 +197,16 @@ export class CourseService {
         WHERE course_id = ?
       `;
 
+      const statusValue = data.course_status !== undefined 
+        ? data.course_status 
+        : (existingCourse.course_status || "active");
+      console.log('Updating course with status:', statusValue, 'from data.course_status:', data.course_status, 'existing:', existingCourse.course_status);
+
       await DatabaseUtils.executeQuery(updateQuery, [
         data.course_name,
         data.course_credit,
         data.teacher_id,
-        data.course_status || "active",
+        statusValue,
         course_id,
       ]);
 
@@ -410,7 +415,7 @@ export class CourseService {
       }
 
       if (min_credit && min_credit > 0) {
-        query += " AND c.course_credit >= ?";
+        query += " AND c.course_credit = ?";
         params.push(min_credit);
       }
 

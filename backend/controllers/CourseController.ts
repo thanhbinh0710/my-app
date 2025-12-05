@@ -71,6 +71,7 @@ export class CourseController {
     course_group?: string;
     course_credit: number;
     teacher_id: number;
+    course_status?: string;
   }) {
     try {
       const course = await this.courseService.createCourse(data);
@@ -96,6 +97,7 @@ export class CourseController {
       course_name: string;
       course_credit: number;
       teacher_id: number;
+      course_status?: string;
     }
   ) {
     try {

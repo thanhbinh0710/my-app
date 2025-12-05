@@ -22,7 +22,9 @@ BEGIN
         SELECT c.course_credit, e.grade
         FROM enroll e
         JOIN course c ON e.course_id = c.course_id
-        WHERE e.student_id = p_StudentID AND e.grade IS NOT NULL;
+        WHERE e.student_id = p_StudentID 
+          AND e.grade IS NOT NULL
+          AND e.progress = 100;
     
     DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
     

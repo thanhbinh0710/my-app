@@ -18,8 +18,8 @@ export class FacultyRepository extends BaseRepository<
 
   async create(data: CreateFacultyRequest): Promise<Faculty> {
     const query = `
-      INSERT INTO ${this.tableName} (faculty_name, office_location, phone_number, email)
-      VALUES (?, ?, ?, ?)
+      INSERT INTO ${this.tableName} (faculty_name, office_location, phone_number, email, number_of_teacher_in_faculty)
+      VALUES (?, ?, ?, ?, ?)
     `;
 
     await DatabaseUtils.executeQuery(query, [
@@ -27,6 +27,7 @@ export class FacultyRepository extends BaseRepository<
       data.office_location || null,
       data.phone_number || null,
       data.email || null,
+      data.number_of_teacher_in_faculty || 0,
     ]);
 
     const insertId = await DatabaseUtils.getLastInsertId();
@@ -116,6 +117,10 @@ export class FacultyRepository extends BaseRepository<
     if (data.email !== undefined) {
       fields.push("email = ?");
       values.push(data.email);
+    }
+    if (data.number_of_teacher_in_faculty !== undefined) {
+      fields.push("number_of_teacher_in_faculty = ?");
+      values.push(data.number_of_teacher_in_faculty);
     }
 
     if (fields.length === 0) {
